@@ -1,0 +1,15 @@
+# 本地环境与生成文件，不属于发布源码 / Local environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+model.json
+*.log
+# 密钥和许可证不得提交；仍须人工审阅 / Review changes; never commit secrets
+.env
+.env.*
+*.lic

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ZYO"
+version = "0.2.0"
+description = "Inspectable general-purpose LP/MILP optimizer and Python modeling API"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = ["numpy>=1.23,<3"]
+
+[project.optional-dependencies]
+native-sparse = ["scipy>=1.11,<2"]
+research = ["scipy>=1.11,<2"]
+comparison = ["scipy>=1.11,<2"]
+storage = ["scipy>=1.11,<2", "matplotlib>=3.8,<4"]
+
+[project.scripts]
+zyo = "zyo.cli:main"
+ZYO = "zyo.cli:main"
+lzyopt = "lzyopt.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["zyo*", "lzyopt*"]
+
+[tool.setuptools]
+py-modules = ["ZYO", "_zyo_version"]
