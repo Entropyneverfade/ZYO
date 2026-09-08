@@ -12,6 +12,8 @@
 
 ## 迁移决策门
 
+2026-09-08本机盘点：RTX5060Ti、16311MiB显存，NVIDIA驱动610.88。当前内核为CPU实现；本轮先优化已经剖析到的CSC组装开销。GPU候选先评估稀疏矩阵传输/组装、线性求解或一阶算法，分别记录端到端时间、CPU时间、RSS、显存与原始残差；基础数值库可用，外部优化器仍仅隔离比较。GPU kernel availability and speed require separate validation; hardware inventory is not solver capability.
+
 1. 同一模型分别测建模、标准化、节点 LP、稀疏线性代数、搜索管理和结果检查；区分 Python 开销与已经在 BLAS/SuperLU 内执行的计算。
 2. 先测试算法、矩阵复用或数据结构改进。只有实现语言确为瓶颈时才形成 C++ 候选。
 3. 候选使用清晰的数组/稀疏矩阵接口；不要逐变量跨语言往返。原始数学、参数、停止状态、原生引擎来源和异常保持可追踪。

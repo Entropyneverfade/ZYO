@@ -1,5 +1,21 @@
 # 版本记录 / Changelog
 
+## 0.3.1 — 2026-09-08 · 密集换基与稀疏装配 / Dense pivots and sparse assembly
+
+- 密集内核采用实际最小比值、大主元退化平局及真实换基RHS检查，增加五个解析机制反例与原24h UC回归。
+- 同一24h UC模型密集/稀疏及三种隔离对照各三次OPTIMAL，密集成本28625、ENS0，完整物理与原始约束检查通过。
+- 稀疏内核直接构造CSC增广矩阵，增加矩形/空维度/显式零/重复项/输入不变性测试。
+- 完成20题×2方法×3次消融，状态、解、目标、界、节点和迭代逐项一致；七个背包MILP中位调用时间减少19%–23%。
+- 原60题和另外300小整数题全部OPTIMAL，168份不可行证书完成Fraction精确复核；同步双语实测图表与公开测试清单。
+
+English:
+
+- Added exact-minimum ratio selection, stable degenerate ties and actual post-pivot RHS checks, with five analytical regressions and the unchanged 24-hour UC regression.
+- Passed all three UC attempts for each of two native engines and three isolated references; dense cost28625 and ENS0 pass independent physical and original-model checks.
+- Constructed the native augmented matrix directly in CSC, with rectangular, empty, explicit-zero, duplicate-entry and input-preservation tests.
+- Completed120 controlled ablation runs with identical statuses, solutions, objectives, bounds, nodes and iterations. Median calls on seven knapsack MILPs decrease by19%–23%.
+- Solved all360 ordinary small integer cases and exactly rechecked168 infeasibility witnesses; refreshed bilingual figures and the public test manifest.
+
 ## 0.3.0 — 2026-09-08 · 原生输入与机组组合 / Native input and unit commitment
 
 - 增加自有 free MPS 受控解析器、Model.read 分派、目标常数和整数/边界处理，以及含极端指数的格式反例测试。

@@ -9,7 +9,7 @@ from dataclasses import dataclass, field, replace
 import math
 import time
 import numpy as np
-from scipy.sparse import coo_matrix, diags, eye, bmat
+from scipy.sparse import coo_matrix, csc_matrix, diags, eye
 from scipy.sparse.linalg import splu
 
 from .sparse_certificate import box_bound, box_infeasibility, primal_check, objective_value
@@ -112,6 +112,25 @@ def _normal_solver(A,ratio):
     return solve,statistics
 
 
+def _augmented_matrix(C):
+    # 直接按 CSC 列指针组装 [-I C'; C 0]，复用稀疏结构避免通用块装配的多次格式转换。
+    # 只改变存储构造；符号、数值、列排序与原块矩阵一致，不改变牛顿方程。
+    C=C.tocsc()
+    if not C.has_canonical_format:
+        C=C.copy(); C.sum_duplicates(); C.sort_indices()
+    m,n=C.shape
+    transpose=C.T.tocsc()
+    left_ptr=C.indptr+np.arange(n+1)
+    positions=np.arange(C.nnz)+np.repeat(np.arange(n)+1,np.diff(C.indptr))
+    indices=np.empty(n+2*C.nnz,dtype=left_ptr.dtype)
+    data=np.empty(n+2*C.nnz,dtype=float)
+    indices[left_ptr[:-1]]=np.arange(n); data[left_ptr[:-1]]=-1.
+    indices[positions]=n+C.indices; data[positions]=C.data
+    indices[n+C.nnz:]=transpose.indices; data[n+C.nnz:]=transpose.data
+    indptr=np.r_[left_ptr,left_ptr[-1]+transpose.indptr[1:]]
+    return csc_matrix((data,indices,indptr),shape=(n+m,n+m))
+
+
 def _augmented_solver(A,x,s,rp,rd,statistics=None,stabilize=None):
     """Solve the unsquared Newton system with symmetric diagonal scaling.
 
@@ -127,7 +146,7 @@ equations. No regularization changes the optimization model.
     column_scaled=A.multiply(scale_x)
     scale_rows=1./np.sqrt(np.maximum(np.asarray(column_scaled.power(2).sum(axis=1)).ravel(),1e-30))
     C=(diags(scale_rows)@column_scaled).tocsc()
-    K=bmat([[-eye(n,format='csc'),C.T],[C,None]],format='csc')
+    K=_augmented_matrix(C)
     statistics={} if statistics is None else statistics
     lu=None
     if stabilize is None or not stabilize:

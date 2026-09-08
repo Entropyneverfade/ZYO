@@ -1,8 +1,8 @@
-# 能力和限制 / Capabilities and limitations — 0.3.0 research build
+# 能力和限制 / Capabilities and limitations — 0.3.1 research build
 
-当前增量：196 项研发回归通过。原生受控 free MPS 读取见 [格式说明](mps.md)。24h/2机组 UC 的 `native_sparse` 三次 OPTIMAL 并通过原始约束、物理、成本及界检查；密集 `native` 三次 NUMERICAL_ERROR（Phase I did not finish）。独立手算4h例两条自主路径均通过。完整图表及协议见 [UC 实测](uc_results.md)。
+当前增量：密集离基选择修复、稀疏CSC装配优化、独立解析回归和120次装配消融。原生受控free MPS读取见[格式说明](mps.md)。24h/2机组UC的`native`和`native_sparse`各三次OPTIMAL并通过原始约束、物理、成本及界检查。完整图表及协议见[UC实测](uc_results.md)。密集算法仍有其他数值失败，退化换基规则不具备完整Bland防循环保证；时间与迭代限制继续有效。
 
-Current increment: 196 development tests pass. Native controlled free-MPS import is documented separately. The 24-hour two-unit UC case passes all three sparse-native attempts; dense native returns Phase-I NUMERICAL_ERROR in all three. Both native paths pass the separate hand-checked four-hour fixture. See the linked protocol and figures.
+Current increment repairs dense leaving-row selection and optimizes sparse CSC assembly, with analytical tests and120 ablation runs. Both native engines pass all three unchanged24-hour UC attempts. Other numerical failures remain; the dense stable-tie rule is not the complete Bland anti-cycling rule, and resource limits remain enforced. See the linked protocol and figures.
 
 - LP/MILP：自主密集两阶段单纯形/基本分支定界；实验性自主有限盒稀疏内点法/分支定界。不是稀疏修正单纯形，也没有成熟的热启动、割平面、伪成本或并行搜索体系。
 - 稀疏路径要求所有变量有显式有限上下界。盒对偶界及不可行分离采用保守浮点检查，不是一般精确算术证书；无法构造充分射线时仍可能数值未决。

@@ -18,6 +18,25 @@ class LPResult:
     message: str = ""
 
 
+def _leaving_row(column, rhs, basis, pivot_tol, feasibility_tol):
+    # 固定比值绝对误差无法约束松弛误差：1e-12 步长乘 1e13 列系数即可越界 10。
+    # 仅在实际最小非负比值相同的行间择优，等步长优先大主元，最后按基编号确定顺序。
+    leaving=np.flatnonzero(column>pivot_tol)
+    if not len(leaving): return None
+    ratios=np.maximum(0,rhs[leaving])/column[leaving]
+    ties=leaving[ratios==np.min(ratios)]
+    for row in sorted((int(i) for i in ties),key=lambda i:(-column[i],basis[i])):
+        # 比值检验容许微负RHS，但消元使用真实RHS；负的实际步长可能被其他列系数放大。
+        # 逐候选检查真实换基后RHS，不裁剪、不改方程；没有安全主元时保留数值失败。
+        with np.errstate(over='ignore',invalid='ignore',divide='ignore'):
+            step=rhs[row]/column[row]
+            predicted=rhs-column*step
+        predicted[row]=step
+        if np.all(np.isfinite(predicted)) and np.min(predicted)>=-feasibility_tol:
+            return row
+    return None
+
+
 def relaxation(model, lower, upper, options, deadline):
     # 求解当前分支节点的 LP 松弛；lower/upper 是节点边界，不能被全局变量边界替代。
     n = len(lower)
@@ -122,7 +141,8 @@ def relaxation(model, lower, upper, options, deadline):
             tab[-1] -= cost[j] * tab[i]
 
     def simplex():
-        # Bland 入基及离基平局规则用于减轻退化循环；仍须检查数值与资源限制。
+        # 入基按最小编号；等步长离基优先大主元以抑制退化消元增长，再按基编号确定顺序。
+        # 该混合规则不是完整 Bland 防循环定理，循环仍由迭代/时间限制如实终止。
         while True:
             if time.perf_counter() >= deadline:
                 return "TIME_LIMIT"
@@ -139,10 +159,10 @@ def relaxation(model, lower, upper, options, deadline):
             leaving = np.flatnonzero(tab[:-1, entering] > options.pivot_tol)
             if not len(leaving):
                 return "UNBOUNDED"
-            ratios = np.maximum(0, tab[leaving, -1]) / tab[leaving, entering]
-            minimum = np.min(ratios)
-            ties = leaving[np.abs(ratios - minimum) <= 1e-12 * max(1, abs(minimum))]
-            row = min((int(i) for i in ties), key=lambda i: basis[i])
+            row = _leaving_row(tab[:-1, entering],tab[:-1,-1],basis,
+                               options.pivot_tol,options.feasibility_tol)
+            if row is None:
+                return "NUMERICAL_ERROR"
             pivot(row, entering)
 
     if artificial_count:

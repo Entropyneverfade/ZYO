@@ -1,10 +1,15 @@
-# ZYO 0.3.0 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
+# ZYO 0.3.1 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
 
 ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Python 线性建模接口、自主求解内核和单节点储能教学应用。本次为 **研究开发版**，欢迎下载和交流。本项目基于ChatGPT 6 开发，作者本人也在学习中，欢迎相关专业同好交流
 
 [中英安装与使用 / Bilingual quickstart](docs/quickstart_zh.md) · [能力与限制 / Limitations](docs/limitations.md) · [参与开发 / Contributing](CONTRIBUTING.md) · [版本记录 / Changelog](CHANGELOG.md) · [依赖 / Dependencies](THIRD_PARTY.md)
 
-## 0.3.0 新增 / New in 0.3.0
+## 0.3.1 更新 / Updated in 0.3.1
+
+- 修复密集单纯形离基步长和退化平局处理，原24h机组组合密集/稀疏各三次最优。Repaired dense ratio/degenerate pivot selection; both native engines pass all three unchanged 24h UC runs.
+- 自研稀疏内核采用直接CSC增广矩阵装配；20题×2种装配×3次消融的数值输出逐项一致，七个背包MILP用时中位数减少约19%–23%。Direct CSC assembly preserves numerical outputs across 120 ablation runs; median times on seven knapsack MILPs fall by approximately 19%–23%.
+
+## 0.3.0 功能 / Features introduced in 0.3.0
 
 - [原生 MPS 读取](docs/mps.md)：受控 free MPS 子集、自有解析器和严格格式检查。Native controlled free-MPS import and explicit format validation.
 - [机组组合教程](docs/unit_commitment.md)：24 小时、2 台机组、风光、爬坡、备用、最小开停机和独立物理检查。A 24-hour two-unit UC example with independent physical validation.
