@@ -1,6 +1,6 @@
 {
   "schema": "zyo-public-files-1",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "files": [
     {
       "path": ".gitignore",
@@ -9,8 +9,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 11398,
-      "sha256": "f90bbcb0ea46ee492acc91c4d1e4bc64ca3caefafd539b554556bfae34f37740"
+      "bytes": 12811,
+      "sha256": "f237c0937d7c7e62219303e9f503dd1110a2402c7b020ae853a7965e55e2bcb2"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -24,8 +24,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 8393,
-      "sha256": "588fdecd0467504f9fbe31615b1c173710e8dd5bbfa51b89b292dd1e42772d6f"
+      "bytes": 9621,
+      "sha256": "4d51f2cb1e631117241d1ddfb65deb483130ed68c79952d8cadec3adad29201e"
     },
     {
       "path": "THIRD_PARTY.md",
@@ -40,22 +40,22 @@
     {
       "path": "_zyo_version.py",
       "bytes": 178,
-      "sha256": "5929db844dee4251211619def4ad156d68a39883a9fcdf9701b04fc0af81c485"
+      "sha256": "ae16580a1c270feebb69d42b2348b281ac16c9daf19afac94c15503ad8a0be44"
     },
     {
       "path": "docs/figures/uc_comparison.csv",
       "bytes": 365,
-      "sha256": "763dd5771f294e57501d13497bd97c130c53fe450e67797f441ccd6217412a63"
+      "sha256": "c0c5588f5682ada6df00f408b515a1e5d5cef661d7bfe6aa0fd206fbced77dbe"
     },
     {
       "path": "docs/figures/uc_comparison.svg",
-      "bytes": 24730,
-      "sha256": "fdf9b7c7df003a926811e237dc809eb984a800554e4601e2dd52648829562b39"
+      "bytes": 23427,
+      "sha256": "8534d80ecb27a09ad3339efd9e06be3028350e25a577d8ca6da63ced79a8bfd8"
     },
     {
       "path": "docs/figures/uc_dispatch.svg",
-      "bytes": 37169,
-      "sha256": "665dd79c3d791b0c9b456544af915a0ad13c0d935087c0cd98823c0c867d8ea5"
+      "bytes": 39788,
+      "sha256": "8246e039fed6054868518af7b117e46f97ed25a18dba4986d368d2e0113ec0e7"
     },
     {
       "path": "docs/implementation_languages.md",
@@ -64,8 +64,8 @@
     },
     {
       "path": "docs/limitations.md",
-      "bytes": 5718,
-      "sha256": "5cf161429e8fc30b289e26f3455c1c78dd6d938f45dfca57d306bb7c8829a565"
+      "bytes": 5767,
+      "sha256": "43b43e594dda1b9919b6cd25e5dc440255150bbbe87c393425379c2c43be522f"
     },
     {
       "path": "docs/mps.md",
@@ -74,13 +74,13 @@
     },
     {
       "path": "docs/quickstart_zh.md",
-      "bytes": 6571,
-      "sha256": "510515d0558253176409a5b675a584020c02a03b343aa6f1f93973809c7232cf"
+      "bytes": 6705,
+      "sha256": "31db069d5f350d65053f6eab14c4c472dd9b6189eac5c0d10c0842d959e26467"
     },
     {
       "path": "docs/uc_results.md",
-      "bytes": 4406,
-      "sha256": "5440fb905f39c65e7fef78d8867fa4af7341963acf17da166178c02f301f83b8"
+      "bytes": 4352,
+      "sha256": "9d54d5557430671b2a4b39fb3aacc951a2c6e34f366a2836d0155bc2d9cef005"
     },
     {
       "path": "docs/unit_commitment.md",
@@ -135,7 +135,7 @@
     {
       "path": "pyproject.toml",
       "bytes": 745,
-      "sha256": "550f3c1611e4d4bf0e150880a8fca45a09c66c5d28d552c5885517454c8f7bb9"
+      "sha256": "066000deb22c50236fba9b33b842da8ec23f07e91b0c28f36ef2c64ff21a58e4"
     },
     {
       "path": "tests/data/native_sparse_60.json",
@@ -163,9 +163,14 @@
       "sha256": "8858aac1894e0c6b2dd796cae69f941ad43a11886f46393511e7f1e4d1d9bb35"
     },
     {
+      "path": "tests/test_power_palette.py",
+      "bytes": 868,
+      "sha256": "f877e74d77118b16006bb37b35012b6fd04243524d2733d5cf3460f274c6566b"
+    },
+    {
       "path": "tests/test_sparse_assembly.py",
-      "bytes": 2337,
-      "sha256": "e5cf72f6e487e08e061cb244fa2ed481a5627cd07d42f4070b01264373cf9c26"
+      "bytes": 4675,
+      "sha256": "00ab90b318f84e6dce69d75f22bfa4d1d15b6039520f70462c6967fbed81be06"
     },
     {
       "path": "tests/test_sparse_infeasibility.py",
@@ -174,8 +179,8 @@
     },
     {
       "path": "tests/test_sparse_newton.py",
-      "bytes": 4752,
-      "sha256": "99491df0fd4d0883da0c8d8f171a3ed77f2e5cd06af1a87a64fa58ef70baef16"
+      "bytes": 5815,
+      "sha256": "b3fc82fbb03ade9c7d5673a06d6f1cdb269dbbcd1e495e9d5969b0e1d04f2e7e"
     },
     {
       "path": "tests/test_sparse_phase_one.py",
@@ -205,7 +210,7 @@
     {
       "path": "tests/test_zyo_imports.py",
       "bytes": 1103,
-      "sha256": "49d7fe991e6dd93fa4038e03ad85f8a508f7cd90e338954550a9640ce407b502"
+      "sha256": "6261fffa39faa7ac637437f201ac3506487df819e695ee11456449ea294f98ff"
     },
     {
       "path": "tests/test_zyo_modeling.py",
@@ -334,8 +339,8 @@
     },
     {
       "path": "zyo/sparse_lp.py",
-      "bytes": 25656,
-      "sha256": "56a7a300e30d2762b9e5b7b27721934b7a02246e0d5fde95c84207c4cbfd3e72"
+      "bytes": 26620,
+      "sha256": "6e86b3160040bde3cddd07e315dbafbe350abd818af042f2f46f92513d271e7b"
     },
     {
       "path": "zyo/sparse_mip.py",
@@ -414,8 +419,8 @@
     },
     {
       "path": "zyo_power/uc_plot.py",
-      "bytes": 8024,
-      "sha256": "c5ee79d4360680aff7dfc4b72cd30ddd44b01929bce346f9342b595f21b31750"
+      "bytes": 8985,
+      "sha256": "906830c3bca183f7e0029cebbb17182fb3beb05c8f9906d19d30d067aac2857f"
     },
     {
       "path": "zyo_power/unit_commitment.py",

@@ -1,18 +1,18 @@
-# 24h 机组组合实测 / Measured 24-hour unit commitment — 0.3.1
+# 24h 机组组合实测 / Measured 24-hour unit commitment — 0.3.2
 
 2026-09-08，合成教学/开发输入 `examples/uc_24h.json`：24×1h、2台固定容量机组、264变量、48二进制、480约束、1537非零元。模型为单节点有限时域 MILP，完整假设见 [建模与复现教程](unit_commitment.md)。开发实例与保留测试集分开管理。
 
-ZYO 稀疏原生三次均返回 OPTIMAL 并通过独立原始约束、整数、物理、成本和界检查：目标 `28625.000009868018`，最优界 `28624.99999612956`，归一化 Gap `4.79946e-10`，最大物理残差 `2.17679e-8`，ENS `0 MWh`，21节点/214迭代。三种隔离比较引擎均返回目标 `28625`。不同最优轨迹均可接受。
+ZYO 稀疏原生三次均返回 OPTIMAL 并通过独立原始约束、整数、物理、成本和界检查：目标 `28625.000009868018`，最优界 `28624.99999612956`，归一化 Gap `4.79946e-10`，最大物理残差 `2.17679e-8`，ENS `0 MWh`，21节点/222迭代。三种隔离比较引擎均返回目标 `28625`。不同最优轨迹均可接受。
 
 | 实际路径 / Actual engine | 通过 / Accepted | 实际状态 / Status | 冷调用中位 s / Median call s | 采样峰值中位 MiB / Median peak RSS |
 |---|---:|---|---:|---:|
-| ZYO native 0.3.1 | 3/3 | OPTIMAL | 22.8482746 | 52.43 |
-| ZYO native_sparse 0.3.1 | 3/3 | OPTIMAL | 0.7995304 | 57.72 |
-| HiGHS 1.8.0 | 3/3 | OPTIMAL | 0.0091327 | 55.01 |
-| Gurobi 13.0.2 | 3/3 | OPTIMAL | 0.0104294 | 36.43 |
-| COPT 8.0.6 | 3/3 | OPTIMAL | 0.0179956 | 37.38 |
+| ZYO native 0.3.2 | 3/3 | OPTIMAL | 25.8929957 | 52.38 |
+| ZYO native_sparse 0.3.2 | 3/3 | OPTIMAL | 0.8032180 | 58.31 |
+| HiGHS 1.8.0 | 3/3 | OPTIMAL | 0.0093026 | 69.43 |
+| Gurobi 13.0.2 | 3/3 | OPTIMAL | 0.0106638 | 36.73 |
+| COPT 8.0.6 | 3/3 | OPTIMAL | 0.0183519 | 37.55 |
 
-密集原生修复后成本约28625，25节点/26272迭代，三次通过全部验收门。历史0.3.0在该输入上为根Phase-I失败（487迭代），其0.584秒是失败耗时，不与当前成功求解计作速度提升。24h原生稀疏本例调用约为Gurobi的77倍；只描述此开发实例，不是通用性能倍率或全球排名。
+密集原生成本约28625，25节点/26272迭代，三次通过全部验收门。24h原生稀疏本例调用约为Gurobi的75倍；只描述此开发实例，不是通用性能倍率或全球排名。本轮使用资源语义配色与纹理表示火电、风电、光伏和ENS，需求曲线单独标记。
 
 ![运行轨迹 / Dispatch](figures/uc_dispatch.svg)
 
@@ -30,8 +30,8 @@ ZYO 稀疏原生三次均返回 OPTIMAL 并通过独立原始约束、整数、�
 
 ## English
 
-The synthetic fixture has24 hourly periods, two units,264 variables,48 binaries,480 constraints and1537 nonzeros. All three attempts of each native engine now pass the independent gates. Dense native reaches cost28625 with25 nodes/26272 iterations; sparse-native objective/bound/residuals are listed above. ENS is zero. The three isolated references obtain28625. The old dense0.3.0 result was a487-iteration Phase-I failure; its shorter failed-attempt time is not a successful-solve speed comparison.
+The synthetic fixture has24 hourly periods, two units,264 variables,48 binaries,480 constraints and1537 nonzeros. All three attempts of each native engine pass the independent gates. Dense native reaches cost28625 with25 nodes/26272 iterations; sparse native uses21 nodes/222 iterations. Its objective/bound/residuals are listed above. ENS is zero. The three isolated references obtain28625. Resource colors and hatches identify thermal, wind, solar and ENS, with a separate demand line.
 
 Measurements use the same Windows/Ryzen 9 9950X host, Python 3.10.19, NumPy 2.2.6 and SciPy 1.15.3. Three fresh processes per engine run in seeded randomized order with one requested thread, 30-second solve / 60-second process budgets and 4 GiB RSS supervision. No warmup is used. Solve-call time and complete process wall time are separate; RSS samples are taken every 0.1 seconds. Failures stay in the table. Requested feasibility/integer tolerances are 1e-7 and mip_gap is zero; returned floating-point gaps are checked explicitly using the stated formula, not rounded into exact proof.
 
-Every engine receives the identical frozen unsolved model. External results never enter the native computation. The sparse-native call is roughly77× Gurobi on this fixture only, not a general ratio or global rank. Network SCUC, annual UC and probabilistic adequacy have separate milestones. Use the tutorial to reproduce the native example and measure your own runtime.
+Every engine receives the identical frozen unsolved model. External results never enter the native computation. The sparse-native call is roughly75× Gurobi on this fixture only, not a general ratio or global rank. Network SCUC, annual UC and probabilistic adequacy have separate milestones. Use the tutorial to reproduce the native example and measure your own runtime.

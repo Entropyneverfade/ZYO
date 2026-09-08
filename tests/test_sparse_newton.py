@@ -11,6 +11,23 @@ import zyo
 
 @unittest.skipUnless(importlib.util.find_spec('scipy'), 'SciPy sparse linear algebra required')
 class SparseNewtonTests(unittest.TestCase):
+    def test_original_units_trigger_refinement_after_scaled_residual_is_small(self):
+        from scipy.sparse import csc_matrix
+        from zyo.sparse_lp import _augmented_solver
+        # 手工构造：A*dx=0，dx=(3,-1)，dy=0，ds=(1,2)。系数和右端均为二进制精确数。
+        # 缩放后的残差很小仍会被2**30放大；停止改进必须服从还原后的原方程门。
+        A=csc_matrix([[2.**30,3.*2.**30]])
+        x=np.array([.125,2.]);s=np.array([3.,1.])
+        rp=np.array([0.]);rd=np.array([1.,2.]);rc=np.array([9.125,3.])
+        try:
+            dx,dy,ds=_augmented_solver(A,x,s,rp,rd,stabilize=False)(rc)
+        except ArithmeticError as exc:
+            self.fail('已知可解的原方程被缩放残差提前停止拒绝：'+str(exc))
+        self.assertLessEqual(float(np.max(abs(A@dx-rp))),1e-9)
+        self.assertLessEqual(float(np.max(abs(A.T@dy+ds-rd))),3e-9)
+        self.assertLessEqual(float(np.max(abs(s*dx+x*ds-rc))),1e-9*(1+max(abs(rc))))
+        np.testing.assert_allclose(dx,[3.,-1.],rtol=0,atol=1e-12)
+
     def test_assignment_with_redundant_equalities_reaches_exact_optimum_88(self):
         # 可行点(0,1),(1,2),(2,0)成本88；行势(0,9,29)、列势(7,8,35)给出下界88。
         costs=[[7,8,69],[23,17,44],[36,71,70]]

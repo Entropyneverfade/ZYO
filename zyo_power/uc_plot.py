@@ -8,6 +8,17 @@ from pathlib import Path
 import statistics
 
 
+def stack_style(resources):
+    # 依用户要求参照HUST_GTDS 2023说明书第73/92页：火红、风绿、光黄、水青、储蓝。
+    # 这是语义近似配色而非软件默认RGB复刻；ENS用独立灰色交叉纹理，不与火电红色混淆。
+    styles={'thermal':('#ff0000',''),'wind':('#00cc00','|||'),'solar':('#ffff00','///'),
+            'hydro':('#00cccc','\\\\'),'storage':('#0000ff','..'),'ens':('#dddddd','xx')}
+    if any(name not in styles for name in resources):
+        raise ValueError('Unknown resource in the power color contract')
+    return dict(colors=[styles[name][0] for name in resources],hatches=[styles[name][1] for name in resources],
+                reference='HUST_GTDS 2023 manual, printed pages 73 and 92; approximate semantic colors')
+
+
 def save_json(path, data):
     with Path(path).open('x',encoding='utf-8') as stream:
         json.dump(data,stream,ensure_ascii=False,indent=2,allow_nan=False)
@@ -73,7 +84,8 @@ def plot_dispatch(case, trace, stem, engine, status, metadata=None):
         raise ValueError('Refuse dispatch figure for a physically invalid candidate')
     stem = Path(stem)
     # 图契约：上图展示真实逐时平衡，下图展示启停状态；不替失败结果生成假轨迹。
-    save_json(stem.with_suffix('.data.json'),dict(case=case,trace=trace,engine=engine,status=status,audit=audit,metadata=metadata,
+    style=stack_style(['thermal','wind','solar','ens'])
+    save_json(stem.with_suffix('.data.json'),dict(case=case,trace=trace,engine=engine,status=status,audit=audit,metadata=metadata,style=style,
         contract='quantitative grid; actual candidate supply plus commitment; synthetic development; PNG/SVG editable text'))
     export_trace(case,trace,stem.with_suffix('.data.csv'))
     plt,font = plotting()
@@ -82,9 +94,11 @@ def plot_dispatch(case, trace, stem, engine, status, metadata=None):
     hours = np.arange(1,len(case['demand'])+1)
     fig,(ax,heat) = plt.subplots(2,1,figsize=(11,6.3),gridspec_kw={'height_ratios':[3,1]},layout='constrained')
     thermal = np.sum(trace['power'],axis=0)
-    ax.stackplot(hours,thermal,trace['wind'],trace['solar'],trace['ens'],
-                 labels=['火电 Thermal','风电 Wind','光伏 Solar','失负荷 ENS'],colors=['#597eaa','#6aa89e','#dfbb61','#c78783'],step='mid')
-    ax.plot(hours,case['demand'],color='#333333',linewidth=1.6,drawstyle='steps-mid',label='需求 Demand')
+    layers=ax.stackplot(hours,thermal,trace['wind'],trace['solar'],trace['ens'],
+                 labels=['火电 Thermal','风电 Wind','光伏 Solar','失负荷 ENS'],colors=style['colors'],
+                 step='mid',edgecolor='#333333',linewidth=.45)
+    for layer,hatch in zip(layers,style['hatches']): layer.set_hatch(hatch)
+    ax.plot(hours,case['demand'],color='#bb00bb',linewidth=1.6,drawstyle='steps-mid',label='需求 Demand')
     ax.set(ylabel='功率 Power (MW)',xlim=(.5,len(hours)+.5),ylim=(0,max(case['demand'])*1.15))
     ax.set_title(f'机组组合运行 / UC dispatch — {engine} · {status}',loc='left')
     ax.legend(ncol=5,loc='upper left',fontsize=9); ax.grid(axis='y',alpha=.15)

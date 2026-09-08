@@ -1,5 +1,21 @@
 # 版本记录 / Changelog
 
+## 0.3.2 — 2026-09-08 · 原方程校正与行缩放 / Original-equation refinement and row scaling
+
+- 增加由原Newton方程残差触发的同LU有界校正，使用二进制精确解析方向构造回归，恢复原RTS24失败输入的自主求解。
+- 实现直接CSC行缩放与混合类型精度提升，补充矩形、空维度、重复项、输入不变、整数及float32极小值测试。
+- 消融报告绑定实际操作、题目、方法与代码身份，并加入标签篡改检测回归。
+- 统一机组组合运行图的资源语义颜色与纹理，更新独立比较图和中英文结果说明。
+- 通过219项完整研发回归，完成360普通小整数最优解和168份证书的独立精确核验。
+
+English:
+
+- Added bounded same-LU correction triggered by the original Newton equations, a binary-exact analytical regression, and native recovery of the retained RTS24 failure.
+- Implemented direct CSC row scaling with promoted precision and independent shape, duplicate, input-preservation, integer and tiny-float32 checks.
+- Bound ablation reports to the actual operation, case, method and code identity, with a tampered-label regression.
+- Applied semantic resource colors and hatches to UC figures and refreshed the independently checked bilingual comparison.
+- Passed219 development regressions and independently verified360 ordinary small integer optima and168 exact witnesses.
+
 ## 0.3.1 — 2026-09-08 · 密集换基与稀疏装配 / Dense pivots and sparse assembly
 
 - 密集内核采用实际最小比值、大主元退化平局及真实换基RHS检查，增加五个解析机制反例与原24h UC回归。

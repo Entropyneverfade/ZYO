@@ -1,10 +1,19 @@
-# ZYO 0.3.1 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
+# ZYO 0.3.2 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
 
 ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Python 线性建模接口、自主求解内核和单节点储能教学应用。本次为 **研究开发版**，欢迎下载和交流。本项目基于ChatGPT 6 开发，作者本人也在学习中，欢迎相关专业同好交流
 
 [中英安装与使用 / Bilingual quickstart](docs/quickstart_zh.md) · [能力与限制 / Limitations](docs/limitations.md) · [参与开发 / Contributing](CONTRIBUTING.md) · [版本记录 / Changelog](CHANGELOG.md) · [依赖 / Dependencies](THIRD_PARTY.md)
 
-## 0.3.1 更新 / Updated in 0.3.1
+## 0.3.2 更新 / Updated in 0.3.2
+
+- 稀疏Newton方向按原方程残差追加同一LU校正，保留原精度门，并通过解析方向反例验证。Added same-LU refinement governed by the original Newton-equation residuals, with an analytical regression.
+- CSC行缩放直接处理非零元，按输入类型提升精度，覆盖整数与float32极小值反例。Direct CSC row scaling preserves promoted precision, including integer and tiny float32 inputs.
+- 机组组合出图统一资源语义配色与纹理，更新五路径同模实测和双语图表。Added semantic resource colors and hatches, with refreshed five-path measurements and bilingual figures.
+- 完整研发回归219项通过，360普通小整数题最优，168份证书精确复核通过。Passed219 development regressions, solved360 ordinary small integer cases and exactly rechecked168 witnesses.
+
+数学参考 / Mathematical reference: [Carson & Higham, SIAM J. Scientific Computing (2017)](https://doi.org/10.1137/17M1122918)。本次采用双精度残差校正，实际验证范围见[结果与协议](docs/uc_results.md)。This increment uses double-precision residual correction; measured scope is documented with the results.
+
+## 0.3.1 功能 / Features introduced in 0.3.1
 
 - 修复密集单纯形离基步长和退化平局处理，原24h机组组合密集/稀疏各三次最优。Repaired dense ratio/degenerate pivot selection; both native engines pass all three unchanged 24h UC runs.
 - 自研稀疏内核采用直接CSC增广矩阵装配；20题×2种装配×3次消融的数值输出逐项一致，七个背包MILP用时中位数减少约19%–23%。Direct CSC assembly preserves numerical outputs across 120 ablation runs; median times on seven knapsack MILPs fall by approximately 19%–23%.

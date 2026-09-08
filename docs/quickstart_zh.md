@@ -43,7 +43,7 @@ if r.has_solution:
 m.write('model.json')
 ```
 
-没有明确信息时，不给无限变量添加随意的大上界来使稀疏路径通过；请选择符合真实物理/数学含义的边界或保留不支持状态。当前受控 MPS/LP 通用读取尚未交付。
+变量边界应来自实际数学/物理模型，稀疏路径要求显式有限上下界。已交付[受控free MPS读取](mps.md)，支持范围和格式检查见专门说明。Bounds should follow the mathematical or physical model; the sparse path requires finite bounds. Controlled free-MPS import is available with the documented feature checks.
 
 ## 3. 不调用优化器的储能教学例
 

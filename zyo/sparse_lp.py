@@ -131,6 +131,18 @@ def _augmented_matrix(C):
     return csc_matrix((data,indices,indptr),shape=(n+m,n+m))
 
 
+def _row_scaled_csc(matrix,scale):
+    # 对角左乘只需逐个非零元按其行索引缩放；避免构造对角矩阵及通用稀疏矩阵乘法。
+    # 独立副本先合并重复项，与数学矩阵的行缩放一致，保护调用方存储和列顺序。
+    scale=np.asarray(scale)
+    # 先按输入与缩放因子提升类型，再原位乘法；防止整数截断及 float32 中间下溢。
+    result=matrix.tocsc(copy=True).astype(np.result_type(matrix.dtype,scale.dtype),copy=False)
+    result.sum_duplicates()
+    result.data*=scale[result.indices]
+    result.eliminate_zeros()
+    return result
+
+
 def _augmented_solver(A,x,s,rp,rd,statistics=None,stabilize=None):
     """Solve the unsquared Newton system with symmetric diagonal scaling.
 
@@ -145,7 +157,7 @@ equations. No regularization changes the optimization model.
     scale_x=np.sqrt(x/s)
     column_scaled=A.multiply(scale_x)
     scale_rows=1./np.sqrt(np.maximum(np.asarray(column_scaled.power(2).sum(axis=1)).ravel(),1e-30))
-    C=(diags(scale_rows)@column_scaled).tocsc()
+    C=_row_scaled_csc(column_scaled,scale_rows)
     K=_augmented_matrix(C)
     statistics={} if statistics is None else statistics
     lu=None
@@ -185,7 +197,10 @@ equations. No regularization changes the optimization model.
                     break
                 step+=lu.solve(defect)
                 original_refinements+=1
-        for refinement in range(9 if stabilize else 1):
+        # 参照Carson/Higham(2017) Algorithm 1.1的残差校正原则，原方程门未通过就不能
+        # 仅因缩放残差很小提前停止。复用同一LU额外补做至多3次改进；本实现仍为双精度，
+        # 不套用该论文混合精度的前向误差保证。旧已通过路径在第0次检查原样返回。
+        for refinement in range(9 if stabilize else 4):
             dx=scale_x*step[:n]; dy=scale_rows*step[n:]
             ds=rd-A.T@dy
             primal=float(np.max(np.abs(A@dx-rp),initial=0))
@@ -197,7 +212,7 @@ equations. No regularization changes the optimization model.
                 statistics.update(regularization=ridge,refinement_steps=original_refinements+refinement,
                                   unregularized_fallback=False)
                 return dx,dy,ds
-            if stabilize and refinement<8:
+            if refinement<(8 if stabilize else 3):
                 step+=lu.solve(rhs-K@step)
         if stabilize:
             # 主元启发式也会选中近相关的满秩矩阵；若稳定化改进受限，仍尝试原分解，
