@@ -4,6 +4,16 @@ ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Pyt
 
 [中英安装与使用 / Bilingual quickstart](docs/quickstart_zh.md) · [能力与限制 / Limitations](docs/limitations.md) · [参与开发 / Contributing](CONTRIBUTING.md) · [版本记录 / Changelog](CHANGELOG.md) · [依赖 / Dependencies](THIRD_PARTY.md)
 
+## 授权与用途申请 / Licensing and purpose-only requests
+
+许可人 **Ziyuan Li** 保留对其自有或有权授权内容的未来商业化权利，包括商业许可、收费软件及API/SaaS。后续非商业测试方案限制的是获授权人的用途，而非许可人自己的商业化安排；历史MIT和第三方权利分别保留。
+
+当前公开0.3.3按[MIT](LICENSE)提供，可依现有许可使用。后续受控测试/API方案及当前审核状态见[授权说明](docs/licensing-and-access.md)。[申请入口](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)只需说明用途；无需提交真实姓名、邮箱、电话、单位、证件或私人研究数据。公开Issue会显示平台账号和填写内容，请只写不含隐私的概括用途。
+
+**Ziyuan Li** reserves future commercialization of material he owns or is authorized to license, including commercial licenses, paid software and API/SaaS. Proposed noncommercial testing terms restrict recipients' permitted uses, not the licensor's own commercial options; historical MIT and third-party rights remain separate.
+
+Public0.3.3 remains available under [MIT](LICENSE). See the [prospective policy and review status](docs/licensing-and-access.md). The [request form](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml) asks only for intended use, not real name, email, phone, affiliation, identity documents or private research data. Public issues show the platform account and submitted content; provide only a non-sensitive summary.
+
 ## 0.3.3 更新 / Updated in 0.3.3
 
 - 稀疏LP每次求解局部复用增广CSC结构，每轮填入新数值并完成数值分解；覆盖结构失效及存储隔离的5项新回归。Added per-LP augmented CSC structural reuse, fresh values/factorizations and five invalidation/isolation regressions.

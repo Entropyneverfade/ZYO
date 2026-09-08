@@ -1,5 +1,14 @@
 # 版本记录 / Changelog
 
+## 2026-09-08 · 授权说明与用途申请 / Licensing guidance and purpose-only requests
+
+- 明确Ziyuan Li对自有或有权授权内容保留商业许可、收费软件、API/SaaS等未来商业化安排。
+- 发布中英文后续非商业测试/API方案、历史MIT与第三方权利说明及版本适用流程。
+- 添加仅填写用途的申请表；使用平台账号或申请编号衔接审批和后续授权。
+- 增加四文件政策增量导出及两项隔离导出/申请字段回归检查，软件版本沿用0.3.3。
+
+English: documented the licensor's future commercial options and prospective testing/API policy with inherited-rights boundaries; added a purpose-only form and account/request-based approval references; added a four-file policy export with two isolation/form regressions, retaining software version0.3.3.
+
 ## 0.3.3 — 2026-09-08 · 局部稀疏结构复用 / Local sparse structural reuse
 
 - 完成合成风光RTS24的24/168/8760小时原生DC/PWL调度与逐时检查；年度循环183.01秒，风光实发/弃电单列。
