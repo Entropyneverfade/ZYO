@@ -1,10 +1,18 @@
-# ZYO 0.3.2 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
+# ZYO 0.3.3 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
 
 ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Python 线性建模接口、自主求解内核和单节点储能教学应用。本次为 **研究开发版**，欢迎下载和交流。本项目基于ChatGPT 6 开发，作者本人也在学习中，欢迎相关专业同好交流
 
 [中英安装与使用 / Bilingual quickstart](docs/quickstart_zh.md) · [能力与限制 / Limitations](docs/limitations.md) · [参与开发 / Contributing](CONTRIBUTING.md) · [版本记录 / Changelog](CHANGELOG.md) · [依赖 / Dependencies](THIRD_PARTY.md)
 
-## 0.3.2 更新 / Updated in 0.3.2
+## 0.3.3 更新 / Updated in 0.3.3
+
+- 稀疏LP每次求解局部复用增广CSC结构，每轮填入新数值并完成数值分解；覆盖结构失效及存储隔离的5项新回归。Added per-LP augmented CSC structural reuse, fresh values/factorizations and five invalidation/isolation regressions.
+- 233项开发回归通过；120次同核消融数值逐项一致，该20题开发集的逐题中位时间之和减少3.00%。Passed233 development regressions and120 numerically identical ablation calls; the sum of per-case median call times falls by3.00% on this20-case development set.
+- 将文献优先诊断纳入中英贡献规范，记录原始研究及成熟求解器公开方法的适用条件。Added literature-first diagnosis and documented applicability of primary research and public commercial-solver guidance.
+
+[0.3.3更新小结与本版图集 / Release summary and figures](docs/releases/0.3.3.md) · [0.3.3方法与完整比较口径 / Method and measurement scope](docs/sparse_reuse.md)。既有机组组合比较图的版本与输入见[原0.3.2结果页](docs/uc_results.md)。Existing UC charts retain their0.3.2 measurement identity.
+
+## 0.3.2 功能 / Features introduced in 0.3.2
 
 - 稀疏Newton方向按原方程残差追加同一LU校正，保留原精度门，并通过解析方向反例验证。Added same-LU refinement governed by the original Newton-equation residuals, with an analytical regression.
 - CSC行缩放直接处理非零元，按输入类型提升精度，覆盖整数与float32极小值反例。Direct CSC row scaling preserves promoted precision, including integer and tiny float32 inputs.

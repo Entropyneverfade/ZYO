@@ -1,6 +1,6 @@
 {
   "schema": "zyo-public-files-1",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "files": [
     {
       "path": ".gitignore",
@@ -9,13 +9,13 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 12811,
-      "sha256": "f237c0937d7c7e62219303e9f503dd1110a2402c7b020ae853a7965e55e2bcb2"
+      "bytes": 14832,
+      "sha256": "c2083e49ae21ae95ad5cf952711928b1515f9ff0606dfe568d1b03f0788bdcd6"
     },
     {
       "path": "CONTRIBUTING.md",
-      "bytes": 2592,
-      "sha256": "1a18d86911245d68493fc70ce3e1ce5d3fde9eca11f34e5136bf119ad08c2c93"
+      "bytes": 3791,
+      "sha256": "e3ddf3b06f256a8dc455cb6b0671a59199a0903ce3b3f2da5279ff7ad0c6cd1c"
     },
     {
       "path": "LICENSE",
@@ -24,8 +24,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 9621,
-      "sha256": "4d51f2cb1e631117241d1ddfb65deb483130ed68c79952d8cadec3adad29201e"
+      "bytes": 10795,
+      "sha256": "f1a94d1e1f02d7098f6c3ddf4ce467a09783196296f35bccaf6303d2bbc95299"
     },
     {
       "path": "THIRD_PARTY.md",
@@ -40,7 +40,67 @@
     {
       "path": "_zyo_version.py",
       "bytes": 178,
-      "sha256": "ae16580a1c270feebb69d42b2348b281ac16c9daf19afac94c15503ad8a0be44"
+      "sha256": "64aa6f6f95d92d84ded43dfc2763d686e9e9d3effaff2bfe360661b448c15e3e"
+    },
+    {
+      "path": "docs/figures/0.3.3/annual_overview.svg",
+      "bytes": 74571,
+      "sha256": "0069b1ddbd68d5ce35f881b720f5b691d9a1c701113d790d90bb02b851021715"
+    },
+    {
+      "path": "docs/figures/0.3.3/annual_overview_types.svg",
+      "bytes": 311374,
+      "sha256": "7c80e6222cf5e9b2da78b64fed344d01ce3dc894a5356add1480c06c5e1793a2"
+    },
+    {
+      "path": "docs/figures/0.3.3/annual_renewables.svg",
+      "bytes": 369305,
+      "sha256": "cdb5f0663c68eb5b466144a5de9eef880e5a15f8990725d6dff3d3e830ab54f1"
+    },
+    {
+      "path": "docs/figures/0.3.3/dispatch_renewables.svg",
+      "bytes": 265069,
+      "sha256": "31b2a5f438a557e532ea1175b9aaa2ca0d3e30165e6b357387a98d46afb520f6"
+    },
+    {
+      "path": "docs/figures/0.3.3/first_week_dispatch.svg",
+      "bytes": 76068,
+      "sha256": "0f9be45b458d3abdb7535645cb1e0b62543f5f9d086841fe316ed63ec58ca7fb"
+    },
+    {
+      "path": "docs/figures/0.3.3/first_week_dispatch_types.svg",
+      "bytes": 202638,
+      "sha256": "5932446a1d8f240d7adff4d0780f6b37b5e2fb7929c3c56383afed73789a5fb9"
+    },
+    {
+      "path": "docs/figures/0.3.3/monthly.csv",
+      "bytes": 863,
+      "sha256": "7b854fa9ffc4f82c140805d508eed271a8313ffab63d71673c0a84ea791cfff7"
+    },
+    {
+      "path": "docs/figures/0.3.3/monthly_energy.svg",
+      "bytes": 21256,
+      "sha256": "b875f6caf748abb825a0ea0b99b6744b9173a90051bcbfae8960d81f65cac67f"
+    },
+    {
+      "path": "docs/figures/0.3.3/monthly_energy_types.svg",
+      "bytes": 106099,
+      "sha256": "b10ffe1bf8c7eebf6f7ede7391fcdb4c28b0b0aad11e10071bc591d59d05aaaa"
+    },
+    {
+      "path": "docs/figures/0.3.3/monthly_renewables.csv",
+      "bytes": 2493,
+      "sha256": "6ebb843c8c314e443e175c714c37f9fb7e575a8099e4dd9393284efabb0f1884"
+    },
+    {
+      "path": "docs/figures/0.3.3/monthly_renewables.svg",
+      "bytes": 113959,
+      "sha256": "35656c75fdae84895e143e797a631d57a7f0d902eadca7c2984f246e4cf0b529"
+    },
+    {
+      "path": "docs/figures/0.3.3/monthly_types.csv",
+      "bytes": 2019,
+      "sha256": "ebc834c0578aeb5894c860578cf6a4962faf98296bc012c42f23419a590af8ed"
     },
     {
       "path": "docs/figures/uc_comparison.csv",
@@ -64,8 +124,8 @@
     },
     {
       "path": "docs/limitations.md",
-      "bytes": 5767,
-      "sha256": "43b43e594dda1b9919b6cd25e5dc440255150bbbe87c393425379c2c43be522f"
+      "bytes": 6326,
+      "sha256": "e17ef7531d31e855ed3ca4c74150bc34e40cb5b35781123a1a64d1fd907bf9cc"
     },
     {
       "path": "docs/mps.md",
@@ -76,6 +136,16 @@
       "path": "docs/quickstart_zh.md",
       "bytes": 6705,
       "sha256": "31db069d5f350d65053f6eab14c4c472dd9b6189eac5c0d10c0842d959e26467"
+    },
+    {
+      "path": "docs/releases/0.3.3.md",
+      "bytes": 9747,
+      "sha256": "aaf3869936b69c67e5e4c68bc35aa47b5178266fc765103aa8458bf4cca2d7ba"
+    },
+    {
+      "path": "docs/sparse_reuse.md",
+      "bytes": 4990,
+      "sha256": "d247ce6c4532e9fc7dbabdeba16fa08e3134b1b2fa1f6c83fbd5c3658dcf8edc"
     },
     {
       "path": "docs/uc_results.md",
@@ -135,7 +205,7 @@
     {
       "path": "pyproject.toml",
       "bytes": 745,
-      "sha256": "066000deb22c50236fba9b33b842da8ec23f07e91b0c28f36ef2c64ff21a58e4"
+      "sha256": "e424fd662bcad39af367ffa32d3e103d15f452c03d623c2f1644f428d4c74cf9"
     },
     {
       "path": "tests/data/native_sparse_60.json",
@@ -169,8 +239,8 @@
     },
     {
       "path": "tests/test_sparse_assembly.py",
-      "bytes": 4675,
-      "sha256": "00ab90b318f84e6dce69d75f22bfa4d1d15b6039520f70462c6967fbed81be06"
+      "bytes": 9315,
+      "sha256": "c7e2f14c5e75454e711a553ec61a579016873ae53194bdaa4c83414c8a5b7d09"
     },
     {
       "path": "tests/test_sparse_infeasibility.py",
@@ -210,7 +280,7 @@
     {
       "path": "tests/test_zyo_imports.py",
       "bytes": 1103,
-      "sha256": "6261fffa39faa7ac637437f201ac3506487df819e695ee11456449ea294f98ff"
+      "sha256": "6cd262e2f03ad3a351490bde2dcbdf18b82854c3cb9cd3a2bddda84bf7b35b13"
     },
     {
       "path": "tests/test_zyo_modeling.py",
@@ -339,8 +409,8 @@
     },
     {
       "path": "zyo/sparse_lp.py",
-      "bytes": 26620,
-      "sha256": "6e86b3160040bde3cddd07e315dbafbe350abd818af042f2f46f92513d271e7b"
+      "bytes": 28642,
+      "sha256": "8221a8ee45eef8c0008efde2e14bdfe56f54e9d17ced9b59a66da970d25e31fe"
     },
     {
       "path": "zyo/sparse_mip.py",

@@ -1,5 +1,26 @@
 # 版本记录 / Changelog
 
+## 0.3.3 — 2026-09-08 · 局部稀疏结构复用 / Local sparse structural reuse
+
+- 完成合成风光RTS24的24/168/8760小时原生DC/PWL调度与逐时检查；年度循环183.01秒，风光实发/弃电单列。
+- 交付[本版九幅图及分类电量](docs/releases/0.3.3.md)，按版本保留原总量/节点图、类型图及新增风光堆叠图。
+- Completed native24/168/8760-hour RTS24 DC/PWL dispatch with synthetic wind/PV and hourly checks; the annual loop takes183.01 seconds with explicit renewable generation and curtailment.
+- Delivered[nine release-specific figures and type-level energy data](docs/releases/0.3.3.md), retaining earlier views alongside the new wind/PV stacks.
+
+- 增加每个LP独立的增广CSC装配缓存，精确比对形状、列指针和行索引，逐轮刷新数值并保护输入/输出存储。
+- 增加5项独立结构、数值和生命周期反例，完成233项研发回归及378题精确开发检查。
+- 完成20题×2方法×3次结构复用消融，120次输出数值一致；结构重建17,394→1,965次，逐题中位时间之和减少3.00%。
+- 补齐消融装配次数统计，并保持历史装配/行缩放比较的原操作定义。
+- 更新双语贡献规范，将“遇到问题先查原始文献和成熟求解器公开方法”设为开发基本原则。
+
+English:
+
+- Added a per-LP augmented CSC assembly cache with exact shape/pointer/index invalidation, fresh values and isolated input/output storage.
+- Added five independent structural, numerical and lifecycle regressions; passed233 development tests and378 exact development checks.
+- Completed120 numerically identical calls across20 cases and two methods; reduced structural builds from17,394 to1,965 and the sum of per-case median times by3.00%.
+- Recorded assembly counts while preserving historical assembly/row-scaling ablation definitions.
+- Updated bilingual contribution guidelines with mandatory literature-first diagnosis using primary research and public commercial-solver methods.
+
 ## 0.3.2 — 2026-09-08 · 原方程校正与行缩放 / Original-equation refinement and row scaling
 
 - 增加由原Newton方程残差触发的同LU有界校正，使用二进制精确解析方向构造回归，恢复原RTS24失败输入的自主求解。

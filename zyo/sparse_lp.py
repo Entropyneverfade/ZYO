@@ -143,7 +143,42 @@ def _row_scaled_csc(matrix,scale):
     return result
 
 
-def _augmented_solver(A,x,s,rp,rd,statistics=None,stabilize=None):
+class _AugmentedAssembly:
+    # 仅在一次LP内部缓存装配结构；浮点数据和LU每轮重新计算，不是基热启动。
+    # 依据Gondzio(2012)§5拆分结构/数值工作，具体映射仍由独立块等式测试验证。
+    def __init__(self):
+        self.shape=None
+        self.builds=0
+        self.reuses=0
+
+    def __call__(self,C):
+        C=C.tocsc()
+        if not C.has_canonical_format:
+            C=C.copy();C.sum_duplicates();C.sort_indices()
+        n=C.shape[1]
+        if (self.shape!=C.shape or not np.array_equal(self.source_ptr,C.indptr)
+                or not np.array_equal(self.source_rows,C.indices)):
+            # 同nnz不能证明同结构；删零、固定变量消去等均需重新建立映射。
+            K=_augmented_matrix(C)
+            self.source_ptr=C.indptr.copy();self.source_rows=C.indices.copy()
+            self.indices=K.indices.copy();self.indptr=K.indptr.copy()
+            self.positions=np.arange(C.nnz)+np.repeat(np.arange(n)+1,np.diff(C.indptr))
+            # 对唯一、已排序的CSC结构作整数标号转置，得到数值排列，无浮点编号误差。
+            labels=csc_matrix((np.arange(C.nnz,dtype=np.int64),C.indices,C.indptr),shape=C.shape)
+            self.transpose_order=labels.T.tocsc().data.copy()
+            self.shape=C.shape;self.builds+=1
+            return K
+        self.reuses+=1
+        data=np.empty(n+2*C.nnz,dtype=float)
+        data[self.indptr[:n]]=-1.
+        data[self.positions]=C.data
+        data[n+C.nnz:]=C.data[self.transpose_order]
+        # 返回的三个数组独立所有；求解器/调用方修改结果不能污染缓存和历史矩阵。
+        return csc_matrix((data,self.indices.copy(),self.indptr.copy()),
+                          shape=(sum(C.shape),sum(C.shape)))
+
+
+def _augmented_solver(A,x,s,rp,rd,statistics=None,stabilize=None,assembly=None):
     """Solve the unsquared Newton system with symmetric diagonal scaling.
 
 Normal equations can lose rank numerically as x/s separates near a vertex.
@@ -158,7 +193,7 @@ equations. No regularization changes the optimization model.
     column_scaled=A.multiply(scale_x)
     scale_rows=1./np.sqrt(np.maximum(np.asarray(column_scaled.power(2).sum(axis=1)).ravel(),1e-30))
     C=_row_scaled_csc(column_scaled,scale_rows)
-    K=_augmented_matrix(C)
+    K=_augmented_matrix(C) if assembly is None else assembly(C)
     statistics={} if statistics is None else statistics
     lu=None
     if stabilize is None or not stabilize:
@@ -219,7 +254,7 @@ equations. No regularization changes the optimization model.
             # 并复用相同的原方程门。两种分解均为基础线性代数，实际采用路径写入日志。
             try:
                 if unregularized is None:
-                    unregularized=_augmented_solver(A,x,s,rp,rd,unregularized_statistics,False)
+                    unregularized=_augmented_solver(A,x,s,rp,rd,unregularized_statistics,False,assembly)
                 step=unregularized(rc)
             except RuntimeError as exc:
                 raise ArithmeticError('Augmented factorization alternatives exhausted') from exc
@@ -338,6 +373,8 @@ def _solve_relaxation(model,lower,upper,options,deadline):
                               message='Fixed-box primal and dual arithmetic checked',certificate=certificate)
     x=np.ones(n); s=np.ones(n); y=np.zeros(len(b))
     stabilize_augmented=None
+    # 每个节点LP/辅助Phase-I各自拥有缓存，跨模型、跨调用没有共享状态。
+    augmented_assembly=_AugmentedAssembly()
     # 允许初始点原始/对偶不可行，但 x、s 保持正；rp、rd、mu 分别为两类残差和平均互补量。
     zero_multipliers=np.zeros(len(model.constraints))
     simple_certificate=box_bound(model,zero_multipliers,lo,hi)
@@ -385,7 +422,7 @@ def _solve_relaxation(model,lower,upper,options,deadline):
                     break
                 try:
                     augmented_statistics={}
-                    augmented=_augmented_solver(A,x,s,rp,rd,augmented_statistics,stabilize_augmented)
+                    augmented=_augmented_solver(A,x,s,rp,rd,augmented_statistics,stabilize_augmented,augmented_assembly)
                     stabilize_augmented=augmented_statistics['stabilized']
                     if 'initial_pivot_ratio' in augmented_statistics:
                         history[-1]['initial_augmented_pivot_ratio']=augmented_statistics['initial_pivot_ratio']
