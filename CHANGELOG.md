@@ -1,5 +1,41 @@
 # 版本记录 / Changelog
 
+## 0.3.0 — 2026-09-08 · 原生输入与机组组合 / Native input and unit commitment
+
+- 增加自有 free MPS 受控解析器、Model.read 分派、目标常数和整数/边界处理，以及含极端指数的格式反例测试。
+- 增加固定容量机组组合模型，覆盖逐时平衡、风光、启停、最小开停机、初始状态、爬坡和在线容量备用；独立复算原始功率界、成本及末端携带状态。
+- 交付原生运行入口、24h 合成输入、逐时 CSV、双语运行图和五路径隔离比较图；15 次同模尝试和全部状态归档。
+- ZYO 稀疏原生三次 OPTIMAL，目标约 28625.000009868，最大物理残差 2.177e-8，ENS 0；4h 手算题目标 43 自主验证通过。
+- 完成 196 项研发回归，按功能里程碑同步 0.3.0 包版本、安装元数据与公开清单版本；维护双语教程和结果导向的语言策略。
+- 独立非可编辑安装的74项公开测试、24h稀疏原生与4h密集原生运行/出图通过验收。
+
+English:
+
+- Added an owned controlled free-MPS parser, Model.read dispatch, objective constants, integer/bound semantics and extreme-exponent regressions.
+- Added fixed-capacity UC with hourly balance, renewables, commitment transitions, minimum up/down times, initial state, ramping and online-capacity reserve; independently checked raw power bounds, cost and terminal carry-over state.
+- Delivered a native-only runner, synthetic 24-hour input, hourly CSV, bilingual dispatch and isolated five-path comparison figures, with all 15 attempted runs archived.
+- Sparse native passes all three attempts at objective approximately 28625.000009868, maximum physical residual 2.177e-8 and ENS 0; the four-hour hand fixture reaches cost 43 with native algorithms.
+- Passed all 196 development regressions and synchronized package, installed metadata and export versions to 0.3.0; maintained bilingual tutorials and outcome-driven language policy.
+- Passed 74 non-editably installed public tests and validated installed 24-hour sparse-native and four-hour dense-native examples with figures.
+
+## 0.2.0 — 2026-09-08 · 原生 Phase-I 证书恢复 / Native Phase-I certificate recovery
+
+- 自主稀疏LP增加有限盒弹性Phase-I、原始行乘子回映射和原始盒证书验收；原LP与辅助LP共享节点迭代预算及总截止时刻。
+- 保存辅助实际状态、迭代轨迹、耗时、原失败原因及证书验证/采纳标志；补充证书检查超时的终止门。
+- 增加9项回归，覆盖两个历史整数反例、等式/固定量映射、预算、正松弛反例、下溢和可选依赖；完整174项研发测试通过。
+- 原60与另外300普通小整数题全部OPTIMAL，168份不可行证书经精确有理数复核。完成378题开启/关闭策略消融，逐题保存状态、时间、节点和迭代。
+- 完成20题×5路径×3次同机比较，自主稀疏18有限题稳定通过17题；两个修复题各三次OPTIMAL。24/168/8760h合成储能各三次通过独立物理与成本检查。
+- 同步公开测试白名单、中英文能力记录、原始比较日志字节捕获与本地复现文档。
+
+English:
+
+- Added native finite-box elastic Phase-I recovery, original-row multiplier mapping and original-box certificate validation, sharing the existing per-node iteration budget and total deadline.
+- Recorded auxiliary status/history/runtime, original failure cause and separate certificate verification/acceptance; enforced the deadline after certificate checks.
+- Added nine regressions covering retained integer failures, equality/fixed-variable mapping, budgets, positive-slack counterexamples, underflow and optional dependencies. All174 development tests pass.
+- Solved all360 ordinary small development MILPs and exactly rechecked168 emitted certificates. Completed enabled/disabled audits on all378 prior cases with per-case status/time/node/iteration records.
+- Completed a300-run controlled comparison: native sparse reaches17/18 stable finite-instance successes. Both repaired cases pass three repeats; synthetic24/168/8760-hour storage passes independent physical/cost checks.
+- Maintained the public test manifest, bilingual capability notes, byte-preserving comparison-log capture and local reproduction documentation.
+
 ## 0.2.0 — 2026-09-08 · 运输 LP 数值修复 / Transportation LP numerical fix
 
 - 自主稀疏内核增加初始分解风险筛选、稳定化增广分解及原方程迭代校正；近相关满秩问题保留原分解候选并逐项核验方向。

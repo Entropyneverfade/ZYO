@@ -1,0 +1,14 @@
+{
+  "name": "synthetic_24h_uc",
+  "source": "ZYO synthetic teaching/development case, 24 one-hour intervals, deterministic v1",
+  "demand": [50,48,46,45,46,50,60,70,80,85,88,90,88,85,82,80,85,95,100,95,85,75,65,55],
+  "wind": [15,16,16,17,18,16,14,12,10,8,8,10,12,14,16,15,12,10,8,8,10,12,14,15],
+  "solar": [0,0,0,0,0,0,2,6,12,18,23,26,28,26,22,16,8,2,0,0,0,0,0,0],
+  "reserve": [5,5,5,5,5,5,6,7,8,8,8,8,8,8,8,8,8,9,10,9,8,7,6,5],
+  "strict": true,
+  "ens_cost": 10000,
+  "units": [
+    {"name":"G1","p_min":15,"p_max":60,"marginal_cost":20,"no_load_cost":10,"startup_cost":100,"shutdown_cost":20,"ramp_up":25,"ramp_down":25,"startup_ramp":30,"shutdown_ramp":30,"min_up":4,"min_down":3,"initial_on":1,"initial_duration":5,"initial_power":35},
+    {"name":"G2","p_min":5,"p_max":45,"marginal_cost":45,"no_load_cost":5,"startup_cost":40,"shutdown_cost":10,"ramp_up":20,"ramp_down":20,"startup_ramp":25,"shutdown_ramp":25,"min_up":3,"min_down":2,"initial_on":0,"initial_duration":3,"initial_power":0}
+  ]
+}

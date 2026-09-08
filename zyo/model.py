@@ -10,6 +10,17 @@ from .vardict import VarDict
 class Model(LegacyModel):
     """Linear/MILP model with concise and compatibility-oriented helpers."""
 
+    @classmethod
+    def read(cls, path):
+        from pathlib import Path
+
+        # 只按明确扩展名接入受控 MPS；既有 JSON 读取及子类构造语义保留。
+        if Path(path).suffix.lower() == '.mps':
+            from .mps import read_mps
+            model = read_mps(path)
+            return model if cls is Model else cls.from_dict(model.to_dict())
+        return super().read(path)
+
     def add_var(self, name=None, lb=0.0, ub=None, vtype=CONTINUOUS, kind=None):
         resolved = normalize_vtype(kind if kind is not None else vtype)
         return super().add_var(name=name, lb=lb, ub=ub, kind=resolved)

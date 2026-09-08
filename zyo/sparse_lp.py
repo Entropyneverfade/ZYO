@@ -5,7 +5,7 @@ Only NumPy and SciPy sparse/SuperLU linear algebra are used, no optimizer.
 Finite variable boxes are required in this experimental path. Infeasible-start
 iteration failure is NOT an infeasibility or unboundedness certificate.
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import math
 import time
 import numpy as np
@@ -27,6 +27,7 @@ class SparseLPResult:
     history: list=field(default_factory=list)
     certificate: object=None
     infeasibility_certificate: object=None
+    feasibility_recovery: object=None  # 辅助问题的真实预算、状态和乘子来源。
 
 
 def _standard_form(model,lo,hi):
@@ -199,9 +200,72 @@ def solve_relaxation(model,lower,upper,options,deadline):
     # 算术异常只返回数值未决；不可行判断需要单独的充分证书。
     try:
         with np.errstate(over='raise',invalid='raise',divide='raise'):
-            return _solve_relaxation(model,lower,upper,options,deadline)
+            result = _solve_relaxation(model,lower,upper,options,deadline)
     except (ArithmeticError,ValueError) as exc:
-        return SparseLPResult('NUMERICAL_ERROR',message='LP arithmetic unresolved: '+str(exc))
+        result = SparseLPResult('NUMERICAL_ERROR',message='LP arithmetic unresolved: '+str(exc))
+    if result.status == 'NUMERICAL_ERROR':
+        return _recover_infeasibility(model,lower,upper,options,deadline,result)
+    return result
+
+
+def _recover_infeasibility(model,lower,upper,options,deadline,result):
+    # 仅在旧射线检查未成功的数值失败后尝试一次；直调同一内核避免辅助问题递归恢复。
+    # 辅助解、目标和界均不能替代原 LP；只有原始模型充分证书可以关闭节点。
+    from .sparse_phase_one import build_phase_one, original_multipliers
+    started = time.perf_counter()
+    record = dict(method='native_elastic_phase_one',trigger_status=result.status,
+                  trigger_reason=result.message,original_iterations=result.iterations,
+                  iteration_budget=max(0,options.iteration_limit-result.iterations),
+                  auxiliary_status=None,auxiliary_iterations=0,certificate_verified=False)
+    result.feasibility_recovery = record
+    try:
+        if started >= deadline:
+            raise TimeoutError('Phase-I shared time budget exhausted')
+        if record['iteration_budget'] == 0:
+            record['skipped'] = 'shared iteration budget exhausted'
+            return result
+        auxiliary, mapping = build_phase_one(model,lower,upper,deadline)
+        record.update(variables=len(auxiliary.variables),constraints=len(auxiliary.constraints))
+        aux_options = replace(options,iteration_limit=record['iteration_budget'])
+        with np.errstate(over='raise',invalid='raise',divide='raise'):
+            phase = _solve_relaxation(auxiliary,[v.lb for v in auxiliary.variables],
+                                      [v.ub for v in auxiliary.variables],aux_options,deadline)
+        result.iterations += phase.iterations
+        record.update(auxiliary_status=phase.status,auxiliary_iterations=phase.iterations,
+                      auxiliary_reason=phase.message,auxiliary_objective=phase.objective,
+                      auxiliary_history=phase.history)
+        if phase.status == 'TIME_LIMIT' or time.perf_counter() >= deadline:
+            raise TimeoutError('Phase-I shared time budget exhausted')
+        if phase.status == 'ITERATION_LIMIT':
+            result.status = 'ITERATION_LIMIT'
+            result.message = 'Shared LP/Phase-I iteration limit; original node unresolved'
+        elif phase.status == 'OPTIMAL' and phase.multipliers is not None:
+            lam = original_multipliers(model,mapping,phase.multipliers)
+            proof = box_infeasibility(model,lam,lower,upper,feasibility_tol=options.feasibility_tol)
+            record['certificate_verified'] = proof['verified']
+            if proof['verified']:
+                proof.update(trigger_status=record['trigger_status'],trigger_reason=record['trigger_reason'],
+                             candidate_source='native_elastic_phase_one')
+                result = SparseLPResult('INFEASIBLE',iterations=result.iterations,history=result.history,
+                                        message='Native Phase-I original-box Farkas separation verified',
+                                        infeasibility_certificate=proof,feasibility_recovery=record)
+    except TimeoutError as exc:
+        result.status = 'TIME_LIMIT'
+        result.message = str(exc)
+        record['recovery_error'] = str(exc)
+    except (ArithmeticError,ValueError,RuntimeError) as exc:
+        record['recovery_error'] = str(exc)
+    finally:
+        finished = time.perf_counter()
+        record['runtime_seconds'] = finished-started
+        # 回映射、原始证书扫描和异常处理也耗时；越过共同截止时刻不能关闭节点。
+        if finished >= deadline:
+            result.status = 'TIME_LIMIT'
+            result.message = 'Phase-I shared time budget exhausted'
+            result.infeasibility_certificate = None
+            record['recovery_error'] = result.message
+        record['certificate_accepted'] = result.status == 'INFEASIBLE'
+    return result
 
 
 def _solve_relaxation(model,lower,upper,options,deadline):

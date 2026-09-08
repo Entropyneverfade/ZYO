@@ -1,8 +1,24 @@
-# ZYO 0.2.0 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
+# ZYO 0.3.0 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
 
 ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Python 线性建模接口、自主求解内核和单节点储能教学应用。本次为 **研究开发版**，欢迎下载和交流。本项目基于ChatGPT 6 开发，作者本人也在学习中，欢迎相关专业同好交流
 
 [中英安装与使用 / Bilingual quickstart](docs/quickstart_zh.md) · [能力与限制 / Limitations](docs/limitations.md) · [参与开发 / Contributing](CONTRIBUTING.md) · [版本记录 / Changelog](CHANGELOG.md) · [依赖 / Dependencies](THIRD_PARTY.md)
+
+## 0.3.0 新增 / New in 0.3.0
+
+- [原生 MPS 读取](docs/mps.md)：受控 free MPS 子集、自有解析器和严格格式检查。Native controlled free-MPS import and explicit format validation.
+- [机组组合教程](docs/unit_commitment.md)：24 小时、2 台机组、风光、爬坡、备用、最小开停机和独立物理检查。A 24-hour two-unit UC example with independent physical validation.
+- [实测与可视化](docs/uc_results.md)：ZYO 稀疏原生、密集原生与三种隔离比较引擎，全部尝试及真实状态。Measured dispatch and all five paths, retaining every status.
+- [实现语言策略](docs/implementation_languages.md)：稳定 Python API，按正确性、实测性能与维护成本选择实现语言。Stable Python API; outcome-driven implementation languages.
+
+运行机组组合并出图 / Run UC with figures:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[storage]"
+.\.venv\Scripts\python.exe -I examples/run_uc.py --input examples/uc_24h.json --output uc-results --plot
+```
+
+![机组组合运行 / UC dispatch](docs/figures/uc_dispatch.svg)
 
 ## 自主求解边界
 
@@ -60,13 +76,17 @@ if r.has_solution:
 
 已有一个 8760 小时合成储能循环 MILP 的自主运行证据，但其搜索仅一个根节点，详见能力说明。
 
-2026-09-08 更新：自主稀疏内核加入稳定化 Newton 分解和原方程迭代校正，3×3 独立解析题最优值为 88；10×10、30×30 运输 LP 各三次通过，目标分别为 182、172。20 题开发测评中的 18 个有限最优题，三次稳定通过数由 13 提高到 15。新增 4 项相关回归，详见[版本记录](CHANGELOG.md)。
+0.2.0 历史内核基线：稳定化 Newton 分解、原方程校正和有限盒 Phase-I；20 题测评中 18 个有限最优题的稀疏三次稳定通过数为 17。具体批次、证书和运输 LP 结果见[版本记录](CHANGELOG.md)。0.3.0 新应用测量单列于上方实测页。
 
 许可证为 MIT，保留原始版权声明。
+
+当前完整研发回归196项、独立非可编辑安装的公开测试74项通过；安装后在源码目录外运行24h稀疏原生及4h密集原生示例均通过独立验收。详细算法范围和实际失败见[能力说明](docs/limitations.md)。
 
 ---
 
 ## English
+
+Version 0.3.0 adds native controlled MPS import, a two-unit 24-hour UC model, independent physical checks, a native-only example and bilingual performance figures. All 196 development and 74 non-editably installed public tests pass. Installed 24-hour sparse-native and four-hour dense-native examples pass outside the source directory. See the linked UC results and capability notes for exact scope and actual statuses.
 
 ZYO is a locally runnable, editable, general-purpose **research development project** for linear and mixed-integer linear optimization. It includes a Python modeling API, independent algorithms, and single-node storage teaching applications. Downloads and discussion are welcome. The author describes the project as developed with ChatGPT 6, is also learning, and welcomes exchanges with fellow optimization enthusiasts.
 

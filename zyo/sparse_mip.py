@@ -96,11 +96,13 @@ def solve(model,options):
         bound=max(inherited,lp.bound) if lp.bound is not None else inherited
         logs.append(dict(node=number,status=lp.status,bound=bound if math.isfinite(bound) else None,
                          objective=lp.objective,iterations=lp.iterations,message=lp.message,
-                         infeasibility_certificate=lp.infeasibility_certificate))
+                         infeasibility_certificate=lp.infeasibility_certificate,
+                         feasibility_recovery=lp.feasibility_recovery))
         if root is None:
             root=dict(status=lp.status,bound=lp.bound,objective=lp.objective,history=lp.history,
                       multipliers=lp.multipliers.tolist() if lp.multipliers is not None else None,
-                      certificate=lp.certificate,infeasibility_certificate=lp.infeasibility_certificate)
+                      certificate=lp.certificate,infeasibility_certificate=lp.infeasibility_certificate,
+                      feasibility_recovery=lp.feasibility_recovery)
         if lp.status=='INFEASIBLE':
             continue
         if lp.x is not None:
