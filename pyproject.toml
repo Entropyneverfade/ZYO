@@ -1,14 +1,15 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ZYO"
-version = "0.3.3"
+version = "0.3.4"
 description = "Inspectable general-purpose LP/MILP optimizer and Python modeling API"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "LicenseRef-ZYO-Noncommercial-Testing-1.0.0 AND MIT"
+license-files = ["LICENSE", "LICENSES/*.txt", "LICENSES/MIT-BASELINE.json", "LICENSE-SCOPE.json", "THIRD_PARTY.md", "docs/API-TERMS.md"]
 dependencies = ["numpy>=1.23,<3"]
 
 [project.optional-dependencies]

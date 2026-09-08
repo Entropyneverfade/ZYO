@@ -2,6 +2,10 @@
 
 ## 1. 获取和安装
 
+0.3.4受限新增内容安装/运行前，先阅读[LICENSE](../LICENSE)及[范围](../LICENSE-SCOPE.json)，在[用途申请](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)只填用途，获账号/申请批准并接受条款后在期限内测试（默认90日）。仅使用独立历史MIT部分依原许可，无需新申请。商用、生产、再分发及服务另批；API权限独立管理。
+
+Before installing/running restricted0.3.4 additions, read the license/scope, submit only purpose, obtain account/request approval and assent, then test within the term (default90 days). Independent historical MIT portions retain original rights without a new request. Commercial/production use, redistribution and services need separate approval; API rights are separate.
+
 从仓库页面选择 **Code → Download ZIP**，解压后进入含 `pyproject.toml` 的目录；或者按 README 使用 Git 克隆。以下命令以 Windows PowerShell 为例：
 
 ```powershell

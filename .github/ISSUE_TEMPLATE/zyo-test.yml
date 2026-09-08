@@ -6,7 +6,7 @@
     {
       "type": "markdown",
       "attributes": {
-        "value": "请只说明用途，不要提供真实姓名、邮箱、电话、单位、证件、私人数据或密钥。公开Issue会显示平台账号和填写内容。当前公开0.3.3按MIT使用无需申请；本表用于后续受控测试/API用途登记，具体授权另行确认。Ziyuan Li保留对自有或有权授权内容的未来商业化权利。\n\nPlease state only the intended use. Do not submit real names, emails, phone numbers, affiliations, identity documents, private data or keys. Public issues display the platform account and submitted text. Current public0.3.3 requires no application for MIT use; this form records purposes for future controlled testing/API access, with grants confirmed separately. Ziyuan Li retains future commercialization of material he owns or is authorized to license.\n\n[授权说明 / Policy](https://github.com/Entropyneverfade/ZYO/blob/main/docs/licensing-and-access.md)"
+        "value": "ZYO0.3.4已采用分范围非商业测试许可。仅填写用途；不要提交实名、联系方式、单位、证件、合同、数据或密钥。GitHub公开显示账号与内容。历史MIT部分保留原权利，无需本申请；受限新增内容需批准并接受条款。Ziyuan Li保留自有/有权授权内容的商业化。\n\nZYO0.3.4 adopts scoped noncommercial testing terms. Submit purpose only, no personal/contact/affiliation/evidence/secret data. GitHub shows account/content. Historical MIT portions need no request; restricted additions require approval and assent. Licensor commercialization is reserved.\n\nhttps://github.com/Entropyneverfade/ZYO/blob/main/docs/licensing-and-access.md"
       }
     },
     {

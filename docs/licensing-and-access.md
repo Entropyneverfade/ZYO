@@ -1,53 +1,47 @@
 # ZYO 授权与用途申请 / Licensing and purpose-only requests
 
-2026-09-08 · 政策说明 D2 / Policy statement D2
+2026-09-08 · 软件0.3.4 / Software0.3.4 · 正式条款1.0.0 / Formal terms1.0.0
 
-## 当前版本与后续方案 / Current release and prospective policy
+## 正式许可 / Formal license
 
-当前公开 **ZYO 0.3.3** 的正式许可证仍为 [MIT](../LICENSE)，依该许可使用当前公开材料不需要申请。下述受控测试及API安排是后续方案，正式生效前将固定适用版本、提交、日期和内容范围，并完成权属、法律及安装包一致性审核。申请是用途登记，不自动产生新许可、API访问或交付承诺。
+自0.3.4起，根[LICENSE](../LICENSE)正式采用“ZYO非商业测试许可1.0.0”，许可人Ziyuan Li（个人），采用日期2026-09-08（Asia/Shanghai）。这是源码可用、受控非商业测试方案，不是标准开源许可。[范围清单](../LICENSE-SCOPE.json)登记受限新增表达及继承边界。专业法律审核尚未完成，特别是双语解释、接受证据、专利、限责和终止条款，建议由合格法律专业人士复核。
 
-Public **ZYO0.3.3** remains under [MIT](../LICENSE); use of current public material under that license does not require an application. The controlled-testing/API arrangements below are prospective. Before activation, identify the covered version, commit, date and material and complete provenance, legal and package-consistency checks. A request records intended use; it does not automatically create a grant, API access or a delivery commitment.
+From0.3.4 the root [LICENSE](../LICENSE) formally adopts ZYO Noncommercial Testing License1.0.0, licensor Ziyuan Li (individual), adopted2026-09-08 Asia/Shanghai. It is source-available controlled noncommercial testing, not standard open source. The scope schedule identifies eligible additions and inherited boundaries. Qualified legal review remains outstanding, especially language, assent, patents, liability and termination.
 
-## 许可人保留未来商业化 / Licensor's future commercial rights
+## 你可以如何测试 / How to request testing
 
-**Ziyuan Li（个人）**保留对其自有或有权授权内容自行使用、开发、许可和商业化的权利，包括销售软件或订阅、商业产品集成、收费求解/API/SaaS、咨询服务，以及分别向不同使用者提供商业许可和非商业测试许可。给某位使用者的非商业测试权限不限制许可人自己的商业化，也不自动让其他使用者获得同等商业权限。
+[用途申请 / Purpose-only request](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)
 
-**Ziyuan Li, an individual**, reserves the right to use, develop, license and commercialize material he owns or is authorized to license, including software/subscription sales, commercial integration, paid solving/API/SaaS, consulting and separate commercial or noncommercial-test grants for different recipients. A recipient's noncommercial test grant does not limit the licensor's own commercialization or automatically extend commercial rights to other recipients.
+只写概括用途，例如：“用公开/合成小模型学习LP/MILP并比较结果，属于非商业测试。”无需实名、联系方式、单位、真实项目名、资助方或合同/证件/数据证明。研究和边界用途只说明性质。平台账号或申请编号（允许昵称）用于衔接审批；公开Issue会显示平台账号、时间和内容，请勿填写隐私或密钥，不宣称完全匿名。
 
-上述保留不追溯收回历史MIT权利，不主张独占第三方代码、数据或已有授权内容。混合版本将保留来源及必要声明，新增受限范围单独识别；不能用整个新包的“MIT OR 测试许可”标签意外为全部新增内容提供MIT选项。后续代码贡献须确认许可人有权按计划分发，提交反馈或PR本身不自动转让版权。[MIT原文](https://opensource.org/license/mit)及[许可变更指南](https://opensource.guide/legal/#what-if-i-want-to-change-the-license-of-my-project)。
+Write only a purpose summary, such as learning LP/MILP and comparing public/synthetic models for noncommercial testing. No identity, contact, affiliation, identifying project/sponsor names, contracts, documents or datasets are requested. Describe only the research/boundary-use category. Existing platform accounts/pseudonyms or request IDs connect approvals. Public issues show account/time/content; do not submit private data or keys, and do not assume complete anonymity.
 
-These reservations do not retract historical MIT grants or claim exclusive ownership of third-party or already-licensed material. Mixed releases preserve provenance/notices and identify restricted additions separately; a blanket “MIT OR testing license” label would unintentionally offer an MIT alternative for all additions. Future contributions require appropriate distribution rights; feedback or a PR does not automatically assign copyright.
+许可人回复批准范围、版本、条款和起止时间，申请人在原渠道明确接受后，才开始运行受限新增内容。默认90日，可申请续期；期限及授权记录由管理员填写，不追加隐私问卷。仅查看、下载、fork或发起申请不自动取得运行/生产/商用权限。GitHub适用条款实际授予的平台查看/fork权利保留。
 
-## 申请只需说明用途 / Only intended use is requested
+The licensor replies with scope, version, terms and start/end times; explicitly assent through the same channel before running restricted additions. Default90 days, renewable by approval; administrators complete the grant without another privacy questionnaire. Viewing, downloading, forking or applying alone does not confer execution/production/commercial rights. Applicable GitHub viewing/forking permissions remain preserved.
 
-[打开用途申请表 / Open the purpose-only form](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)
-
-只写一段概括用途即可，例如：“希望用公开或合成小模型学习LP/MILP，并比较求解结果，属于非商业测试。”若希望申请未来API试用，可在同一段用途内说明。科研可概括计算任务，不必提交论文、项目真实名称、合同或数据。
-
-Write one short purpose summary, for example: “I would like to learn LP/MILP using public or synthetic small models and compare solutions for noncommercial testing.” Mention prospective API use in that same summary if relevant. Research purposes may be described generically; no paper, identifying project name, contract or dataset is needed.
-
-- ZYO申请表不索取真实姓名、邮箱、电话、地址、身份证件、单位/学校、雇主或证明材料，也不要求追加联系方式。
-- 审批使用申请所在平台账号（可用昵称）及申请编号衔接；这些标识用于区别申请，不作实名核验。不把昵称宣称为法律身份已认证。
-- 公开Issue会显示GitHub账号、时间及提交内容；GitHub自身的数据处理由其平台政策决定。请勿填写隐私、研究秘密、密码或API密钥。平台标识本身也按最少必要原则处理，不宣称全匿名。
-- 申请时只登记用途；实际授权的版本、期限、条款和接受记录由后续审批流程补齐，不让申请人填写额外隐私表格。未来密钥交付渠道另行安全设计，密钥不在公开Issue发送。
-
-English: the ZYO form requests no real name, email, phone, address, identity documents, affiliation, employer or supporting records. Use the existing platform account/pseudonym and request number to distinguish requests, not to claim verified legal identity. GitHub publicly shows the account, time and submitted text and handles platform data under its own policies; do not submit sensitive data or credentials. Keep platform references minimal rather than claiming complete anonymity. Version, term, terms and assent are handled later without an additional privacy questionnaire. Future credential delivery requires a separately secured channel, never a public issue.
-
-## 后续默认规则 / Prospective defaults
-
-| 项目 / Item | 安排 / Arrangement |
+| 用途 / Purpose | 授权方式 / Permission |
 |---|---|
-| 下载测试 / Software trial | 按申请或账号审批；个人学习、功能评估、性能测试；默认90日，可申请续期 / request/account approval for learning, evaluation and benchmarking; default90 days, renewal by request |
-| 非商业科研 / Noncommercial research | 明确批准概括用途和可识别申请；不要求提交隐私项目材料 / explicit approval of the summarized purpose and identifiable request, without private project records |
-| 本地修改 / Local modification | 获批测试范围内允许研究修改和必要备份，保留来源及修改说明 / approved local research changes and necessary backups with notices |
-| 商业及边界用途 / Commercial and boundary uses | 获授权人商用、广告/引流、商业配套、赞助/横向科研、收费教学及企业评估另批；申请只说明用途性质 / recipient commercial, advertising/acquisition, ancillary, sponsored/commissioned, paid-teaching and employer use requires separate approval; describe only the purpose category |
-| 再分发与第三方服务 / Redistribution and services | 对受限新增内容另行书面授权；继承MIT/第三方部分依其原许可 / separate written permission for restricted additions; inherited licenses govern their own portions |
-| API / Hosted API | 独立申请/账号授权；规划30日、可撤销；禁止共享密钥或转售；额度及资源在服务验证后确定 / separate request/account grant, planned30 days, revocable, no key sharing/resale; limits finalized after service validation |
+| 个人学习、功能评估、性能测试 / Learning, evaluation, benchmarking | 账号/申请批准后在非生产环境测试，默认90日 / approved account/request, non-production, default90 days |
+| 非商业科研 / Noncommercial research | 对概括科研用途明确批准，不索取真实项目资料 / explicit approval of generic research purpose, no identifying records |
+| 商用、生产、广告引流、商业配套 / Commercial, production, advertising/acquisition, ancillary | 另行书面许可 / separate written license |
+| 赞助/委托/混合资助、收费教学、雇主评估 / Sponsored/commissioned/mixed-funded, paid education, employer evaluation | 按用途性质个案批准 / case-specific purpose approval |
+| 本地研究修改 / Local research modification | 获批范围内允许，保留声明和修改记录 / allowed within grant, retain notices/change record |
+| 受限修改版再分发、转授权、第三方服务 / Restricted redistribution, sublicensing, services | 另行书面许可 / separate written permission |
+| API / Hosted access | [独立条款](API-TERMS.md)，规划30日；实际服务/安全/资源验收及授权后发钥 / separate terms, planned30 days; keys follow service/security/resource validation and approval |
 
-这些管理默认不是离线到期锁，也不构成正在运行的API服务。客观测试结果可按获准用途发表，包含负面结果；许可人不因求解或反馈自动取得他人输入、输出或修改的所有权。
+## 许可人商业化与历史MIT / Commercialization and inherited MIT
 
-These defaults are not an offline expiry lock or a currently operating API service. Objective results, including negative findings, may be published for the approved purpose; solving or feedback does not automatically transfer ownership of another party's inputs, outputs or modifications.
+Ziyuan Li保留自有或有权授权内容的商业许可、软件/订阅销售、商业集成、收费求解/API/SaaS与咨询。接收者的非商业测试限制不约束许可人自己的商业化；也不自动向别人授予同等商业权限。
 
-本页用于说明政策与申请流程，不替代正式许可证；自定义条款需要专业法律审核，尤其是匿名/昵称授权的接受证据、适用范围、终止与责任条款。后续采用“非商业测试许可 / 源码可用”名称，适用版本与条款将单独公开。
+Ziyuan Li retains commercial licensing, software/subscription sales, integration, paid solving/API/SaaS and consulting for owned/authorized material. Recipient test restrictions do not limit the licensor's own commercialization or grant equivalent commercial rights to others.
 
-This policy/application guide is not a replacement license. Custom terms require qualified legal review, particularly assent evidence for pseudonymous requests, scope, termination and liability. Future restricted offerings will be described as noncommercial testing / source-available with their exact applicable versions and terms.
+历史0.3.3及此前MIT材料继续依[原MIT](../LICENSES/MIT-legacy.txt)，无需新测试申请；包括既有求解内核。清单中已公开的104个文件身份见[基线](../LICENSES/MIT-BASELINE.json)。新条款只覆盖有权授权的新增表达，不能禁止他人按原MIT使用旧代码。第三方原权利保留。当前包的“新许可 AND MIT”表示各部分分别遵守，不是给受限新增提供MIT任选，也不是给旧MIT叠加限制。
+
+Historical0.3.3 and earlier MIT material, including existing solver kernels, retains the original MIT without a new application. The baseline records104 prior public file identities. New terms cover eligible new expression only and do not prohibit use of old code under MIT; third-party rights remain. The package's “new license AND MIT” identifies respective component terms, not an MIT alternative for restricted additions or extra restrictions on old MIT.
+
+成果和负面评价可按获批用途发表，需保留合理版本/引擎/数据来源说明。许可人不因运行或反馈取得他人输入、输出、修改版权。参见[正式条款](../LICENSE)、[第三方说明](../THIRD_PARTY.md)、[贡献规则](../CONTRIBUTING.md)及[本版更新](releases/0.3.4.md)。
+
+Results and negative evaluations may be published for approved purposes with reasonable version/engine/source attribution. Execution or feedback does not assign others' inputs, outputs or modifications. Consult the formal terms, third-party notices, contribution rules and release summary.
+
+参考 / References: [MIT](https://opensource.org/license/mit), [许可变更指南 / license changes](https://opensource.guide/legal/#what-if-i-want-to-change-the-license-of-my-project).

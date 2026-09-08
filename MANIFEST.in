@@ -1,0 +1,6 @@
+# 源码包携带公开回归的最小输入、示例和授权入口；不笼统打包本机数据目录。
+include tests/data/native_sparse_60.json
+include tests/fixtures/mps/hand_min.mps
+include examples/run_uc.py examples/uc_24h.json
+include CONTRIBUTING.md CHANGELOG.md
+include docs/quickstart_zh.md docs/licensing-and-access.md

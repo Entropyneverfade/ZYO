@@ -1,0 +1,532 @@
+{
+  "schema": "zyo-inherited-public-baseline-1",
+  "repository": "https://github.com/Entropyneverfade/ZYO",
+  "commit": "3f1720720590ea3940e76bbb104f00d68638c55d",
+  "observed_on": "2026-09-08",
+  "license_notice": "LICENSES/MIT-legacy.txt",
+  "notice_sha256_lf": "4f2b10f3ed2fc9c39488624a0cc227c69ca543dd503d08b0952d4bdcd94c841b",
+  "qualification_zh": "记录历史公开内容的身份；历史MIT和独立第三方权利分别保留，清单不是第三方版权转让或全部内容独占声明。",
+  "qualification_en": "Identifies prior public content; inherited MIT and independent third-party rights remain separate. This inventory is not an assignment or exclusive ownership claim.",
+  "files": [
+    {
+      "path": ".github/ISSUE_TEMPLATE/zyo-test.yml",
+      "git_blob_sha1": "06e0a34918a0fbf60ccf4d8f89120aadb9e19bb5",
+      "mode": "100644"
+    },
+    {
+      "path": ".gitignore",
+      "git_blob_sha1": "ce2cdbd9695860a71c1c4ea675a6684156c52ad4",
+      "mode": "100644"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "git_blob_sha1": "dfb50a16d6c776c7b9b12134caa6cd3731566b4d",
+      "mode": "100644"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "git_blob_sha1": "c57bb47465b13cacc18de79fd9e3bbc10466d6a8",
+      "mode": "100644"
+    },
+    {
+      "path": "LICENSE",
+      "git_blob_sha1": "7c1792cdc001fa5038fdc115acf4327f42cf4a08",
+      "mode": "100644"
+    },
+    {
+      "path": "README.md",
+      "git_blob_sha1": "5e4417b3ac5b64094fce9b44e9dfe1064c17a718",
+      "mode": "100644"
+    },
+    {
+      "path": "THIRD_PARTY.md",
+      "git_blob_sha1": "dd42d03487ac9bb6b6d5c7f22a4a726412f780dd",
+      "mode": "100644"
+    },
+    {
+      "path": "ZYO.py",
+      "git_blob_sha1": "e09f3c4ed579f3ed9c4d76ebacff12abc1821739",
+      "mode": "100644"
+    },
+    {
+      "path": "_zyo_version.py",
+      "git_blob_sha1": "bbc203e36295fd7e2dea28190c1cf1e7df49be11",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/0.3.3/annual_overview.svg",
+      "git_blob_sha1": "eadef12f91dfc492ab8abbe4e073d19a7372a27d",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/0.3.3/annual_overview_types.svg",
+      "git_blob_sha1": "f177ce0eaaad1dc16debbbd98cac514374d82b4a",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/0.3.3/annual_renewables.svg",
+      "git_blob_sha1": "d7e720c62c7648150df4e0e4634cb9eb97e21a2a",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/0.3.3/dispatch_renewables.svg",
+      "git_blob_sha1": "faa8dbf22491dadf14a8cdc8c0fe3e8f36b1adf2",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/0.3.3/first_week_dispatch.svg",
+      "git_blob_sha1": "20f58f086d1339d5b30b6f9b4a8adf73607356ac",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/0.3.3/first_week_dispatch_types.svg",
+      "git_blob_sha1": "d5e8f101c3d2f5aeedc9b04e9d432eaa9ee6b6f0",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/0.3.3/monthly.csv",
+      "git_blob_sha1": "96d8e1bcffae060c2222782dbbe57a1534b1273b",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/0.3.3/monthly_energy.svg",
+      "git_blob_sha1": "0c09dad5d7a85d0e9cbbb6508b47421fe547b33d",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/0.3.3/monthly_energy_types.svg",
+      "git_blob_sha1": "e0f164d7dbff19211a74a65e7664d03ca5aed276",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/0.3.3/monthly_renewables.csv",
+      "git_blob_sha1": "ff98a15110b726259397b68d479faf746fa3c4ee",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/0.3.3/monthly_renewables.svg",
+      "git_blob_sha1": "1ba65341a525afd4820e4e16aa1fade2ec872698",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/0.3.3/monthly_types.csv",
+      "git_blob_sha1": "f878e26a8907fa7cf8d8db41b8d588061fbed484",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/uc_comparison.csv",
+      "git_blob_sha1": "fe8da25d518cb55fc2819d369a3f9e37f57bc77d",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/uc_comparison.svg",
+      "git_blob_sha1": "92686a58e70ce43b04913fb4565a97fc924ca2a2",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/figures/uc_dispatch.svg",
+      "git_blob_sha1": "76f290ae8b4c4b1558bf83276f27141c5b2584a7",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/implementation_languages.md",
+      "git_blob_sha1": "7af230398c46bada7886e7277555fb0e8d9cc4b0",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/licensing-and-access.md",
+      "git_blob_sha1": "60eae8064158975883f2c9648287c4084f05dd62",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/limitations.md",
+      "git_blob_sha1": "344d81530f79aac15215f43369a323d66c4687db",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/mps.md",
+      "git_blob_sha1": "997fb7ba2e3ec0f9b88a75738f054e441f38331b",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/quickstart_zh.md",
+      "git_blob_sha1": "cbea4addfaa554ad1136625fb86be1554f161649",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/releases/0.3.3.md",
+      "git_blob_sha1": "6bf11ed79bbcbd7d0b9bdbb07f2b6580d5831701",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/sparse_reuse.md",
+      "git_blob_sha1": "74ad4fb8e6ed90829d7a8402fbe7b76dafb384bd",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/uc_results.md",
+      "git_blob_sha1": "a735455382803be55b22ea051241fcde807e8044",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/unit_commitment.md",
+      "git_blob_sha1": "d6a872dae89b9e08dd709e3f10f7693981c8b3b1",
+      "mode": "100644"
+    },
+    {
+      "path": "examples/run_uc.py",
+      "git_blob_sha1": "7da92eb1e8d3b125c216d9c82aab0473ca086222",
+      "mode": "100644"
+    },
+    {
+      "path": "examples/uc_24h.json",
+      "git_blob_sha1": "336ecf74be4eefae1ca680228826bd07ef9e4e7b",
+      "mode": "100644"
+    },
+    {
+      "path": "lzyopt/__init__.py",
+      "git_blob_sha1": "ec585acf44893abb43da7187abd13a616978cddd",
+      "mode": "100644"
+    },
+    {
+      "path": "lzyopt/__main__.py",
+      "git_blob_sha1": "600f7ba7708a2df09115ea75d8c99623b8ea98cf",
+      "mode": "100644"
+    },
+    {
+      "path": "lzyopt/cli.py",
+      "git_blob_sha1": "627aeb2e6a56982ec0b0b78116386652e2716f47",
+      "mode": "100644"
+    },
+    {
+      "path": "lzyopt/examples.py",
+      "git_blob_sha1": "53ddaa936bf5046d4c494738dcf2078db5c74f16",
+      "mode": "100644"
+    },
+    {
+      "path": "lzyopt/model.py",
+      "git_blob_sha1": "5cd70c2d42c940a2d303b1d1a6baab0789d1b127",
+      "mode": "100644"
+    },
+    {
+      "path": "lzyopt/native.py",
+      "git_blob_sha1": "429b3033717b74dc4e5c2873f9d32b2fd8ef7c2c",
+      "mode": "100644"
+    },
+    {
+      "path": "lzyopt/solver.py",
+      "git_blob_sha1": "c4351bfc0ec4efb7e6acbcdf1a35c3cd89562d6a",
+      "mode": "100644"
+    },
+    {
+      "path": "pyproject.toml",
+      "git_blob_sha1": "30978b8c54d25b44152a63db6ba90f62712d916e",
+      "mode": "100644"
+    },
+    {
+      "path": "release-manifest.json",
+      "git_blob_sha1": "7f99cf6c45dc703e4986222990f9493e5f6bcb6d",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/data/native_sparse_60.json",
+      "git_blob_sha1": "a8e3872dc9937749e1f3de656061799a2f84837a",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/fixtures/mps/hand_min.mps",
+      "git_blob_sha1": "20ff0051bfafbb3a76716672a810809cf5ececb6",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_dense_pivot.py",
+      "git_blob_sha1": "bfaa0095a9edf7c38a34a4a2d4f18fe444ed7b9c",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_mps.py",
+      "git_blob_sha1": "56da8235691514e6e574d86ffb537def7815654e",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_native_sparse.py",
+      "git_blob_sha1": "e9d60aff6e69869534f06956090b30c874bafba6",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_power_palette.py",
+      "git_blob_sha1": "8af335fa27ee6c14a57a79bb13059d711f3ff111",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_sparse_assembly.py",
+      "git_blob_sha1": "1a7fdc8a9a2c63f101cb90472cfb6d9167d4dfb8",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_sparse_infeasibility.py",
+      "git_blob_sha1": "2ca999493b2e01289a648c0a3705d5fcb737fe24",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_sparse_newton.py",
+      "git_blob_sha1": "7abcb07b505ca363c39c8ef70f5e43e6086ef534",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_sparse_phase_one.py",
+      "git_blob_sha1": "d72a38f82ce58230825ca3dd8bca4b4f414d7678",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_storage_periodic.py",
+      "git_blob_sha1": "263191ad6c090375bcbede9932ab13d9ded4198a",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_storage_physics.py",
+      "git_blob_sha1": "de9c0bffa057c2e93e5a3a9387485b2557caebfe",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_unit_commitment.py",
+      "git_blob_sha1": "4a8efa3d23b4b8b7a1e7fd27ec018c61aa005158",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_validation.py",
+      "git_blob_sha1": "d76c7f9b4d5c01fd2c5eb5223719152c8fd49497",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_zyo_imports.py",
+      "git_blob_sha1": "993729d6740a662c8335b7a1bb05b9e55f9d7b17",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_zyo_modeling.py",
+      "git_blob_sha1": "0ff5901e24f51b2ed672c7ec7cc47f6cc1df1f81",
+      "mode": "100644"
+    },
+    {
+      "path": "tests/test_zyo_results.py",
+      "git_blob_sha1": "68a616162957687875c8c16a6e2da38ee100007d",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/__init__.py",
+      "git_blob_sha1": "df6144fc7a1b85100820a73b1989559f555f6580",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/__main__.py",
+      "git_blob_sha1": "5f8232be2ffaab8b9e2ccb4ece71ee352a5dc8f8",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/_version.py",
+      "git_blob_sha1": "d9958c91667448dc5a1c0e1c4b456b0b9bbfae50",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/backend_smoke.py",
+      "git_blob_sha1": "b5dcce8815a53728ec85e6effb08b8f5eba41913",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/capabilities.py",
+      "git_blob_sha1": "1b0408e1473e90fd130ea734a4d87f89495bae78",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/cli.py",
+      "git_blob_sha1": "b86b4f8ac7d8322ca865ba457c10d45137ed49bc",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/constants.py",
+      "git_blob_sha1": "8cf9b6813cb61acf0b30c7e8b00702f92ceffbab",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/errors.py",
+      "git_blob_sha1": "9ad61b7b75c5bcf6eb4953fcb820696201d4d24c",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/model.py",
+      "git_blob_sha1": "e91459edbc893ebe4a371bc0fba0e348bf598371",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/mps.py",
+      "git_blob_sha1": "e3e81247e7b60f5ebdeed1a8f2c2a8d419876550",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/options.py",
+      "git_blob_sha1": "761c980abb5d62d0c0967133691e49f29c3a441e",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/result.py",
+      "git_blob_sha1": "d0687e3b0394f305fdb9b69eca6f824355c28297",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/solvers/__init__.py",
+      "git_blob_sha1": "99a55ac6ced3ad39964e55c52b868d34eea3b0d5",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/solvers/_direct.py",
+      "git_blob_sha1": "91510edcb6cd2f2e579a165f8988f286d8d9b976",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/solvers/_legacy.py",
+      "git_blob_sha1": "76c02631f2f8bcb83bf7fbb40dbdc2701d97cb81",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/solvers/base.py",
+      "git_blob_sha1": "cb59b5a55927b22fb0cf16101f51f9ce3484c80f",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/solvers/copt.py",
+      "git_blob_sha1": "2f59350e77ce5c22aae73c4d24bd8c8d3fbd558d",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/solvers/gurobi.py",
+      "git_blob_sha1": "4dd520582ebd76714bbe4ae71d02f4d07315494b",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/solvers/highs.py",
+      "git_blob_sha1": "54b9831ec20a73e982488e3553dc8d17ea3064d4",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/solvers/native.py",
+      "git_blob_sha1": "94817d2bba8428b914771d9d8979240519208fb1",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/solvers/native_sparse.py",
+      "git_blob_sha1": "481dd6520ea8912773fb64c9332263213132db3e",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/solvers/registry.py",
+      "git_blob_sha1": "3a002e5072aa27b147a4d1cb411542c195721310",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/sparse_certificate.py",
+      "git_blob_sha1": "278f629bfc4dbddd654f322d49f9b7293b59a5ff",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/sparse_lp.py",
+      "git_blob_sha1": "942753df8de965c88e07c116f9aa17adb0734016",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/sparse_mip.py",
+      "git_blob_sha1": "2aec93df328f0ef8d417fc19ca7d16bf9ac925f9",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/sparse_phase_one.py",
+      "git_blob_sha1": "b0eb02bba01ab863b905e8591235f03a07c585f1",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/status.py",
+      "git_blob_sha1": "7f878e8d47149ef9f856b105e9dfa3cc898052d8",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/validation.py",
+      "git_blob_sha1": "702592954570b9d5cd03cf2f0957e2cf8095c876",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo/vardict.py",
+      "git_blob_sha1": "009d15c6e890e4fa7c64abcdc3cf126cbaf8752c",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/__init__.py",
+      "git_blob_sha1": "189cf1b8781cdbd44733939a0fc6421bd45feae0",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/__main__.py",
+      "git_blob_sha1": "f277a66ac6879d627ccb6238cc8fe4fe49ab3535",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/data.py",
+      "git_blob_sha1": "a9c73b20c08190de47a906ccf93e06b46018d330",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/examples.py",
+      "git_blob_sha1": "4cd610a3d39e883c43ba32e6f39024e785aa0179",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/experiment.py",
+      "git_blob_sha1": "43182eb341990a75f5305479dc3893c4d32c1614",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/optimization.py",
+      "git_blob_sha1": "5835a5906c1f131e5f94cf3cd763c121869bdb7f",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/periodic.py",
+      "git_blob_sha1": "6b3eff382ed96134f140c12bb2707255968bec75",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/plotting.py",
+      "git_blob_sha1": "933b81ef99b6b1a93afa3efa5b007085a3f25896",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/rolling.py",
+      "git_blob_sha1": "5b5dfdd4c84215bbcb006d02f56db89969984f89",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/rule.py",
+      "git_blob_sha1": "cbd313aa73bea17860ba62cf3bb3d46d924ff3b1",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/uc_plot.py",
+      "git_blob_sha1": "de81f2c4a64b77fef95a5c300eddda918c201be7",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/unit_commitment.py",
+      "git_blob_sha1": "42c0a1f1bf0cc5165534f1fb76efafc0c993a8e0",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/validation.py",
+      "git_blob_sha1": "2862518eb2a484a4d00cf4b066a9c6d1f4665f68",
+      "mode": "100644"
+    },
+    {
+      "path": "zyo_power/verify.py",
+      "git_blob_sha1": "3dadbe434dab65854ff2db07c0d5558e5836319a",
+      "mode": "100644"
+    }
+  ]
+}

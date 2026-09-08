@@ -1,7 +1,12 @@
 {
   "schema": "zyo-public-files-1",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "files": [
+    {
+      "path": ".github/ISSUE_TEMPLATE/zyo-test.yml",
+      "bytes": 1609,
+      "sha256": "b0769cc3a9cd49514901cde9c5fee7d068a654b1a3a298efb0488c16e665acf4"
+    },
     {
       "path": ".gitignore",
       "bytes": 299,
@@ -9,28 +14,48 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 14832,
-      "sha256": "c2083e49ae21ae95ad5cf952711928b1515f9ff0606dfe568d1b03f0788bdcd6"
+      "bytes": 16622,
+      "sha256": "eeedf62e3297e42afbe2c5765af7ef957433ad424dc7369ece1bbe2d4e5881b8"
     },
     {
       "path": "CONTRIBUTING.md",
-      "bytes": 3791,
-      "sha256": "e3ddf3b06f256a8dc455cb6b0671a59199a0903ce3b3f2da5279ff7ad0c6cd1c"
+      "bytes": 5108,
+      "sha256": "7f80eb8a915de0ef8c5d62942dcfc5282f78941227017b04463a9bd4cf805807"
     },
     {
       "path": "LICENSE",
-      "bytes": 1097,
-      "sha256": "b3e88b18b08bcd586a7268c8b952e36f029a08d2cf3fa3be909921047bf0384e"
+      "bytes": 14700,
+      "sha256": "015ef5c86a176f46b4e0fc06f88e926a4c24e81b2e32cc667eb80864371cac06"
+    },
+    {
+      "path": "LICENSE-SCOPE.json",
+      "bytes": 3465,
+      "sha256": "1ac56e9863474a76f24a45b2cfa93311bb134800cdff96ee161c6d15f9a8c2f7"
+    },
+    {
+      "path": "LICENSES/MIT-BASELINE.json",
+      "bytes": 15650,
+      "sha256": "f3dab58b8f5e6547707eb5cf69616e2e2b15993cc0d6345eae36d6e05e04ad90"
+    },
+    {
+      "path": "LICENSES/MIT-legacy.txt",
+      "bytes": 1076,
+      "sha256": "4f2b10f3ed2fc9c39488624a0cc227c69ca543dd503d08b0952d4bdcd94c841b"
+    },
+    {
+      "path": "MANIFEST.in",
+      "bytes": 333,
+      "sha256": "e2cd8a7b305636989d36f5ce5eb9facbd46d6acb4d1110c4bdaf8d37ea84c847"
     },
     {
       "path": "README.md",
-      "bytes": 10795,
-      "sha256": "f1a94d1e1f02d7098f6c3ddf4ce467a09783196296f35bccaf6303d2bbc95299"
+      "bytes": 12663,
+      "sha256": "6cdabe52249ab346e27c6637030a55e9c3b2dd9c9c7ba62907966272784cc60e"
     },
     {
       "path": "THIRD_PARTY.md",
-      "bytes": 1748,
-      "sha256": "96534a7554e4aae71aa45e71ae45b96451f6e6375e8bcfff7f0d4f947ca11b68"
+      "bytes": 3356,
+      "sha256": "0bd7ad91b432e85b14470c9e857138e9837a2a733457e90050b1afcfb9bd351a"
     },
     {
       "path": "ZYO.py",
@@ -40,7 +65,12 @@
     {
       "path": "_zyo_version.py",
       "bytes": 178,
-      "sha256": "64aa6f6f95d92d84ded43dfc2763d686e9e9d3effaff2bfe360661b448c15e3e"
+      "sha256": "4467af305d75546f8070a780eb330b11d11eeab6aefbd9561396dbef69a3fe2a"
+    },
+    {
+      "path": "docs/API-TERMS.md",
+      "bytes": 5518,
+      "sha256": "bb8c759d000d85e4e700bad899b9522faf648a21f52addd793f2f3d572b281d5"
     },
     {
       "path": "docs/figures/0.3.3/annual_overview.svg",
@@ -123,6 +153,11 @@
       "sha256": "84a2c8d553bae472823110ea430cadb1cb686506c320d54701f28fc114021857"
     },
     {
+      "path": "docs/licensing-and-access.md",
+      "bytes": 6658,
+      "sha256": "b419924776d114a6a9d12f5e76fab401b7ea3606969346a2921ea4504a68e5a9"
+    },
+    {
       "path": "docs/limitations.md",
       "bytes": 6326,
       "sha256": "e17ef7531d31e855ed3ca4c74150bc34e40cb5b35781123a1a64d1fd907bf9cc"
@@ -134,13 +169,18 @@
     },
     {
       "path": "docs/quickstart_zh.md",
-      "bytes": 6705,
-      "sha256": "31db069d5f350d65053f6eab14c4c472dd9b6189eac5c0d10c0842d959e26467"
+      "bytes": 7505,
+      "sha256": "9104f2026f16608e14f816cde09518d4df86b0f358fb61379e412e8755556ade"
     },
     {
       "path": "docs/releases/0.3.3.md",
       "bytes": 9747,
       "sha256": "aaf3869936b69c67e5e4c68bc35aa47b5178266fc765103aa8458bf4cca2d7ba"
+    },
+    {
+      "path": "docs/releases/0.3.4.md",
+      "bytes": 5159,
+      "sha256": "fd65a5e04d2681690a96d5fe7da7e4e31cde8a14a27167901b8f51845bdfbdf9"
     },
     {
       "path": "docs/sparse_reuse.md",
@@ -204,8 +244,8 @@
     },
     {
       "path": "pyproject.toml",
-      "bytes": 745,
-      "sha256": "e424fd662bcad39af367ffa32d3e103d15f452c03d623c2f1644f428d4c74cf9"
+      "bytes": 909,
+      "sha256": "c0b9044b708e6f45fe4aed41f1ef3e9b0a3459f04e14784d5ecf400eaa655cda"
     },
     {
       "path": "tests/data/native_sparse_60.json",
@@ -280,7 +320,7 @@
     {
       "path": "tests/test_zyo_imports.py",
       "bytes": 1103,
-      "sha256": "6cd262e2f03ad3a351490bde2dcbdf18b82854c3cb9cd3a2bddda84bf7b35b13"
+      "sha256": "b3eedf341590b58f39f167727ca3cc4d2151e3fbca5e2aea784d4545557e96aa"
     },
     {
       "path": "tests/test_zyo_modeling.py",
@@ -508,5 +548,8 @@
       "sha256": "7bc24856871b6df14db05b5f35fa8c92db7618dd071baf5efa6a69ad40720328"
     }
   ],
-  "scope": "筛选后的研究开发版；不含本机私有实验或完整历史"
+  "scope": "筛选后的研究开发版；不含本机私有实验或完整历史",
+  "export_scope": "licensing_release",
+  "baseline_commit": "3f1720720590ea3940e76bbb104f00d68638c55d",
+  "preserved_files": 92
 }

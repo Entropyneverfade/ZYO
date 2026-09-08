@@ -1,4 +1,4 @@
-# ZYO 0.3.3 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
+# ZYO 0.3.4 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
 
 ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Python 线性建模接口、自主求解内核和单节点储能教学应用。本次为 **研究开发版**，欢迎下载和交流。本项目基于ChatGPT 6 开发，作者本人也在学习中，欢迎相关专业同好交流
 
@@ -6,13 +6,13 @@ ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Pyt
 
 ## 授权与用途申请 / Licensing and purpose-only requests
 
-许可人 **Ziyuan Li** 保留对其自有或有权授权内容的未来商业化权利，包括商业许可、收费软件及API/SaaS。后续非商业测试方案限制的是获授权人的用途，而非许可人自己的商业化安排；历史MIT和第三方权利分别保留。
+自0.3.4（2026-09-08）起正式采用[ZYO非商业测试许可1.0.0](LICENSE)，[范围清单](LICENSE-SCOPE.json)区分受限新增与历史MIT/第三方部分。许可人 **Ziyuan Li** 保留自有或有权授权内容的商业化，包括收费软件、商业许可和API/SaaS。[本版小结](docs/releases/0.3.4.md)。
 
-当前公开0.3.3按[MIT](LICENSE)提供，可依现有许可使用。后续受控测试/API方案及当前审核状态见[授权说明](docs/licensing-and-access.md)。[申请入口](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)只需说明用途；无需提交真实姓名、邮箱、电话、单位、证件或私人研究数据。公开Issue会显示平台账号和填写内容，请只写不含隐私的概括用途。
+受限新增内容按账号/申请批准非商业测试，默认90日；商用、生产、再分发和服务另批。历史0.3.3和既有MIT代码仍可依[原MIT](LICENSES/MIT-legacy.txt)使用，无需新测试申请。[授权说明](docs/licensing-and-access.md)和[申请入口](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)只需概括用途，不索取实名、联系方式、单位或证明；公开Issue会显示平台账号及内容，请勿填写隐私。
 
-**Ziyuan Li** reserves future commercialization of material he owns or is authorized to license, including commercial licenses, paid software and API/SaaS. Proposed noncommercial testing terms restrict recipients' permitted uses, not the licensor's own commercial options; historical MIT and third-party rights remain separate.
+From0.3.4 (2026-09-08), the formal default is [ZYO Noncommercial Testing License1.0.0](LICENSE), with [scope](LICENSE-SCOPE.json) separating eligible additions from inherited MIT/third-party material. **Ziyuan Li** retains commercialization of owned/authorized material, including paid software, commercial licenses and API/SaaS. See the [release summary](docs/releases/0.3.4.md).
 
-Public0.3.3 remains available under [MIT](LICENSE). See the [prospective policy and review status](docs/licensing-and-access.md). The [request form](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml) asks only for intended use, not real name, email, phone, affiliation, identity documents or private research data. Public issues show the platform account and submitted content; provide only a non-sensitive summary.
+Restricted additions require account/request-approved noncommercial testing, default90 days; commercial/production use, redistribution and services need separate permission. Historical0.3.3 and existing MIT code retain [original rights](LICENSES/MIT-legacy.txt) without a new test application. The guide/form requests only purpose, not identity, contact, affiliation or evidence. Public issues show accounts/content; provide only non-sensitive summaries.
 
 ## 0.3.3 更新 / Updated in 0.3.3
 
@@ -110,7 +110,7 @@ if r.has_solution:
 
 0.2.0 历史内核基线：稳定化 Newton 分解、原方程校正和有限盒 Phase-I；20 题测评中 18 个有限最优题的稀疏三次稳定通过数为 17。具体批次、证书和运输 LP 结果见[版本记录](CHANGELOG.md)。0.3.0 新应用测量单列于上方实测页。
 
-许可证为 MIT，保留原始版权声明。
+当前采用分范围的非商业测试许可；历史MIT及第三方声明分别保留，见LICENSE和LICENSE-SCOPE.json。
 
 当前完整研发回归196项、独立非可编辑安装的公开测试74项通过；安装后在源码目录外运行24h稀疏原生及4h密集原生示例均通过独立验收。详细算法范围和实际失败见[能力说明](docs/limitations.md)。
 
@@ -134,4 +134,4 @@ The public tests include independently specified core/storage examples and 60 fr
 
 2026-09-08 update: the native sparse kernel adds stabilized Newton factorization and original-equation iterative refinement. The independent 3×3 analytical fixture reaches objective 88. The 10×10 and 30×30 transportation LPs pass all three repeats at objectives 182 and 172. Across the 18 finite-optimum instances in the 20-instance development assessment, three-repeat successes increase from 13 to 15. Four regression tests accompany the fix; see the [changelog](CHANGELOG.md).
 
-Distributed under the MIT license, retaining the original copyright notice. English Python identifiers and Chinese maintenance comments support bilingual development.
+Distributed under scoped noncommercial testing terms with inherited MIT and third-party notices retained; see LICENSE and LICENSE-SCOPE.json. English Python identifiers and Chinese maintenance comments support bilingual development.

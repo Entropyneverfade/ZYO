@@ -8,7 +8,7 @@ class ZYOImportTests(unittest.TestCase):
         lower = importlib.import_module("zyo")
         upper = importlib.import_module("ZYO")
 
-        self.assertEqual(lower.__version__, "0.3.3")
+        self.assertEqual(lower.__version__, "0.3.4")
         self.assertIs(upper.Model, lower.Model)
         self.assertEqual(lower.BINARY, "B")
         self.assertEqual(lower.Status.OPTIMAL.value, "OPTIMAL")

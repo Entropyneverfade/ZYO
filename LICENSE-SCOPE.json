@@ -1,0 +1,59 @@
+{
+  "schema": "zyo-license-scope-1",
+  "software_version": "0.3.4",
+  "license_version": "1.0.0",
+  "license_identifier": "LicenseRef-ZYO-Noncommercial-Testing-1.0.0",
+  "distribution_expression": "LicenseRef-ZYO-Noncommercial-Testing-1.0.0 AND MIT",
+  "adopted_on": "2026-09-08",
+  "timezone": "Asia/Shanghai",
+  "licensor": "Ziyuan Li",
+  "authority_basis": "Owner-provided individual-development declaration and explicit instruction to replace default MIT licensing; no independent legal clearance claimed.",
+  "public_baseline": {
+    "commit": "3f1720720590ea3940e76bbb104f00d68638c55d",
+    "manifest": "LICENSES/MIT-BASELINE.json",
+    "notice": "LICENSES/MIT-legacy.txt"
+  },
+  "local_baseline_commit": "5e7dc91df29f827d2c08b6b0c24ff857f2b7ebf9",
+  "scope_rule_zh": "原基线内容及其MIT/第三方权利保留。下列路径中相对基线的新创且可获版权保护、许可人自有或有权授权的表达适用新许可；事实、版本数字和不需许可的使用不因此受到独占。未变的求解内核继承MIT。后续新增内容须更新登记并核对来源，不自动吞并第三方权利。",
+  "scope_rule_en": "Baseline content and its MIT/third-party rights remain preserved. Only new copyrightable expression in the listed paths relative to the baseline, owned or authorized by the licensor, follows the new license. Facts, version numbers and uses not requiring permission are not monopolized. Unchanged solver kernels retain MIT. Later additions require updated registration and provenance review, not automatic incorporation of third-party rights.",
+  "covered_public_paths": [
+    "MANIFEST.in",
+    "LICENSE",
+    "LICENSE-SCOPE.json",
+    "README.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "THIRD_PARTY.md",
+    "pyproject.toml",
+    "_zyo_version.py",
+    "docs/quickstart_zh.md",
+    "docs/licensing-and-access.md",
+    "docs/API-TERMS.md",
+    "docs/releases/0.3.4.md",
+    ".github/ISSUE_TEMPLATE/zyo-test.yml",
+    "tests/test_zyo_imports.py"
+  ],
+  "covered_local_additions": [
+    "tools/export_public_release.py",
+    "tests/test_license_release.py",
+    "tests/test_zyo_imports.py"
+  ],
+  "notice_exceptions": [
+    "LICENSES/MIT-legacy.txt",
+    "LICENSES/MIT-BASELINE.json"
+  ],
+  "notice_permission": "Anyone may copy license, scope and provenance notices to understand, request or comply with terms.",
+  "third_party_exclusions": [
+    "NumPy/SciPy and bundled linear-algebra components",
+    "Matplotlib and fonts",
+    "External optimizers and their licenses",
+    "RTS/MATPOWER/UW data and derived historical figures under their respective rights",
+    "Research papers, manuals and privately sourced datasets"
+  ],
+  "historical_figure_policy": "All prior published figures and release summaries retain original bytes and provenance; no exclusive ownership or new usage restrictions are asserted over them.",
+  "github_platform_allowance": "On-platform viewing and forking rights actually granted by applicable GitHub terms remain preserved.",
+  "rights_clearance": "Bounded source/history/dependency inventory and owner declaration; not code-similarity, employment/commissioned-rights or legal clearance.",
+  "legal_review_completed": false,
+  "future_changes": "Update this schedule for each later release; special third-party grants and exceptions override the default for their own scope.",
+  "license_text_sha256_lf": "015ef5c86a176f46b4e0fc06f88e926a4c24e81b2e32cc667eb80864371cac06"
+}

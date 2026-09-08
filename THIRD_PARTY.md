@@ -1,21 +1,21 @@
-# 依赖边界 / Dependency boundary
+# 第三方与历史许可 / Third-party and historical notices
 
-ZYO 的自主算法代码在本项目中维护，内部保留旧 `lzyopt` 名称。独立求解并不意味着完全没有第三方基础数值库。
+ZYO0.3.4采用分范围许可：受限新增内容依根LICENSE；历史MIT全文见LICENSES/MIT-legacy.txt，逐文件公开基线见LICENSES/MIT-BASELINE.json，范围见LICENSE-SCOPE.json。既有求解/应用内核保留MIT；原署名LZYOpt contributors继续保留。新条款不主张第三方代码或数据归Ziyuan Li独占。
+ZYO0.3.4 uses scoped terms: root LICENSE for eligible additions, LICENSES/MIT-legacy.txt for inherited text, LICENSES/MIT-BASELINE.json for baseline identity and LICENSE-SCOPE.json for scope. Existing solver/application kernels retain MIT and the LZYOpt contributors attribution. New terms do not claim exclusive ownership of third-party code or data.
 
-- `native`：NumPy 数组与基础浮点运算。
-- `native_sparse`：NumPy、SciPy 稀疏矩阵与 `sparse.linalg.splu` / SuperLU，用于线性方程组；不使用 `scipy.optimize` 或其内嵌 HiGHS。
-- 储能规则和物理检查使用 NumPy；可选 Matplotlib 仅绘图。
-- 历史 HiGHS/Gurobi/COPT 适配器只保留显式、隔离比较用途，不能提供自主求解的解、基、割、界或回退。商业求解器与许可证不随本源码分发。
+| 组件 / Component | 用途和许可边界 / Use and terms |
+|---|---|
+| NumPy | native数组/浮点；BSD-3-Clause，具体发行包所含库另按其声明 / arrays/floating point; BSD-3-Clause plus notices for components in the actual distribution |
+| SciPy / SuperLU / BLAS / LAPACK | 稀疏矩阵与线性方程组，不调用scipy.optimize；SciPy BSD-3-Clause及各数值库自身声明 / sparse linear algebra, not scipy.optimize; SciPy BSD-3-Clause and component notices |
+| Matplotlib / fonts | 可选绘图；Matplotlib及所用字体独立许可 / optional plotting under Matplotlib and individual font terms |
+| HiGHS / Gurobi / COPT | 仅隔离比较；各自许可，不转授商用key / isolated comparison only; separate licenses, no commercial keys sublicensed |
+| setuptools | 构建工具；自身及vendored组件声明 / build tool with its own and vendored notices |
+| RTS24 / MATPOWER / UW / 论文与手册 | 原数据、图表、文献各按来源权利；MATPOWER代码许可不自动覆盖case数据 / data, figures and literature retain source-specific rights; MATPOWER code licensing does not automatically cover case data |
 
-安装依赖仍受各自许可约束；本源码包不捆绑第三方二进制。再分发包含依赖的产品时须保留对应版权和许可。
+本wheel和sdist只分发ZYO源码与声明，不捆绑上述依赖、优化引擎、字体二进制、第三方原始算例或文献。pip安装依赖由其发行物携带各自许可；本表不是离线环境的完整SBOM。今后分发容器、离线环境或C++/GPU二进制时需按实际内容补齐全部版权和许可全文。
+The wheel and sdist contain ZYO source and notices, not bundled dependencies, optimization engines, font binaries, third-party raw cases or literature. Dependencies installed by pip carry their own notices. This table is not a complete offline-environment SBOM; containers, offline environments and C++/GPU binaries require artifact-specific complete notices.
 
-## English
+旧公开图和CSV按原版本原样保留，保留来源引用；本次许可切换不将它们纳入新增独占范围，也不扩大原来未确定的数据/字体再分发许可。纯依赖不等于版权转让。
+Existing public figures/CSVs remain byte-identical with source references. This transition neither places them within newly claimed restricted ownership nor broadens unresolved data/font redistribution rights. Dependency use is not copyright assignment.
 
-ZYO's independent algorithms are maintained in this project, retaining the legacy internal `lzyopt` name. Independent optimization does not mean dependency-free numerical computing.
-
-- `native` uses NumPy arrays and floating-point operations.
-- `native_sparse` uses NumPy, SciPy sparse matrices and `sparse.linalg.splu` / SuperLU for linear systems, not `scipy.optimize` or its embedded HiGHS engine.
-- Storage rules and physical checks use NumPy. Optional Matplotlib is for plotting only.
-- Legacy HiGHS/Gurobi/COPT adapters are exclusively for explicitly selected, isolated comparisons. They must not supply solutions, bases, cuts, bounds or fallback to native solving. Commercial optimizers and licenses are not distributed here.
-
-Dependencies retain their own licenses. This source package does not bundle third-party binaries; redistributing a product with those dependencies requires preserving their notices and licenses.
+来源 / Sources: [NumPy](https://numpy.org/doc/stable/license.html), [SciPy](https://github.com/scipy/scipy/blob/v1.15.3/LICENSE.txt), [Matplotlib](https://matplotlib.org/stable/project/license.html), [MATPOWER8.1](https://github.com/MATPOWER/matpower/blob/8.1/LICENSE).

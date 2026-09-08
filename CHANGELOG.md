@@ -1,5 +1,14 @@
 # 版本记录 / Changelog
 
+## 0.3.4 — 2026-09-08 · 正式许可切换 / Formal licensing transition
+
+- 采用ZYO非商业测试许可1.0.0，登记许可人Ziyuan Li、日期、适用范围和商业化保留。
+- 保存历史MIT全文、104文件公开基线及第三方边界；同步运行版本、SPDX混合元数据、安装教程、贡献规则和独立API条款。
+- 将申请统一为单项用途摘要，按账号/申请批准，默认90日软件测试；增加正式许可导出和损坏产物负例检查。
+- 本版交付与维护说明见[0.3.4小结](docs/releases/0.3.4.md)。
+
+English: adopted scoped Noncommercial Testing License1.0.0 with licensor/date/commercialization reservation; retained MIT text, the104-file baseline and third-party boundaries; synchronized version, SPDX metadata, installation/contribution guidance and API terms; added purpose-only90-day account/request trials and formal-license export/negative checks. See the release summary.
+
 ## 2026-09-08 · 授权说明与用途申请 / Licensing guidance and purpose-only requests
 
 - 明确Ziyuan Li对自有或有权授权内容保留商业许可、收费软件、API/SaaS等未来商业化安排。

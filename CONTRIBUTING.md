@@ -1,5 +1,11 @@
 # 参与开发 / Contributing to ZYO
 
+## 贡献权利 / Contribution rights
+
+新增内容默认按[LICENSE](LICENSE)和[范围](LICENSE-SCOPE.json)，历史MIT部分依原许可。问题报告、平台fork和获批本地修改不自动转让版权。涉及受限代码的修改版或补丁先通过申请渠道商议交付，不默认公开再分发。合入前须确认贡献者有权提交，并明确书面授予必要分发、修改和商业再许可权限，或保留兼容独立许可与组件边界；PR本身不代替版权转让或新增商业授权。只要求非敏感权利声明和用途，不收集实名、单位或合同。权利未明确的贡献保持待处理。
+
+Eligible additions follow LICENSE/scope and inherited MIT portions retain original terms. Reports, platform forks and approved local modifications do not assign copyright. Arrange restricted patch delivery through the request channel rather than assuming public redistribution rights. Before merging, confirm authority and explicit written rights for necessary distribution, modification and commercial relicensing, or retain a compatible independent license/component boundary. A PR alone is not an assignment or extra commercial grant. Request only non-sensitive rights/purpose statements, not names, affiliations or contracts. Unresolved contributions remain pending.
+
 欢迎提交小规模、可独立复核的错误报告、测试和算法增量。当前为研究开发版，不以接口数量或代码量衡量成熟度。
 
 开发基本原则：遇到正确性、数值或性能问题，首先检索原始文献与成熟商业求解器的公开方法，再提出实现假设。记录来源版本/章节、数学条件、与 ZYO 的差异及独立检查；以公开说明为依据区分已知行为与商业内部实现。

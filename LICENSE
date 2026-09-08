@@ -1,21 +1,71 @@
-MIT License
+ZYO 非商业测试许可 1.0.0 / ZYO Noncommercial Testing License 1.0.0
+SPDX-License-Identifier: LicenseRef-ZYO-Noncommercial-Testing-1.0.0
+Copyright (c) 2026 Ziyuan Li
 
-Copyright (c) 2026 LZYOpt contributors
+许可人：Ziyuan Li（个人）。采用日期：2026-09-08（Asia/Shanghai）。首次采用软件版本：ZYO 0.3.4。
+Licensor: Ziyuan Li, an individual. Adoption date: 2026-09-08 (Asia/Shanghai). First adopting software version: ZYO 0.3.4.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. 范围与继承权利 / Scope and inherited rights
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+本许可是源码可用的非商业测试许可，不是标准开源许可。仅约束LICENSE-SCOPE.json明确登记、许可人自有或有权按本条款授权的新增内容（“受限材料”）。历史公开内容身份见LICENSES/MIT-BASELINE.json，原MIT全文及署名见LICENSES/MIT-legacy.txt。混合文件的基线已有部分保留原许可；新条款仅约束有权授权的新增表达。第三方材料按自身许可及THIRD_PARTY.md的边界处理；未审核来源不自动列为受限自有材料。
+This is a source-available noncommercial testing license, not a standard open-source license. It covers only new material expressly scheduled in LICENSE-SCOPE.json that the licensor owns or is authorized to license on these terms (Restricted Materials). LICENSES/MIT-BASELINE.json identifies prior public content; LICENSES/MIT-legacy.txt retains the MIT text and attribution. Baseline portions of mixed files retain their original terms; these terms cover only eligible new expression. Third-party material retains its own terms and the boundaries in THIRD_PARTY.md; unreviewed provenance is not automatically treated as restricted ownership.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+历史MIT及其他有效授权，包括其允许的商用、修改、再分发，继续有效，不被追溯撤销。使用独立MIT部分无需申请本许可。依法不需许可的使用及不可放弃的法定权利保留。元数据中的AND表示不同部分各依其许可，不是对MIT部分叠加限制，也不是让受限新增内容可任选MIT。
+Existing MIT and other valid grants, including the commercial use, modification and redistribution they permit, remain effective and are not retroactively revoked. Independent MIT portions require no application under this license. Uses not requiring permission and non-waivable statutory rights are preserved. AND in metadata means respective terms for different portions, not added restrictions on MIT portions or an MIT alternative for restricted additions.
+
+2. 申请、接受和有限许可 / Request, assent and limited grant
+
+安装、运行或修改受限材料，须先获得许可人对平台账号或申请编号的明确书面批准，并在原渠道明确接受本条款和批准范围。昵称可用；书面包括可保存、可核验的平台电子确认。申请只需概括用途，不索取实名、邮箱、电话、地址、单位、证件、合同或私人研究数据。平台账号、时间及内容按平台规则处理；下载、查看、注册、收到链接或提交申请本身不构成运行授权。
+Before installing, executing or modifying Restricted Materials, obtain the licensor's explicit written approval for a platform account or request reference and explicitly assent to these terms and scope through that channel. Pseudonyms are allowed; retainable, verifiable platform confirmation qualifies as writing. Only a purpose summary is requested, not real names, emails, phone numbers, addresses, affiliations, identity documents, contracts or private research data. Platform account/time/content information follows platform rules. Downloading, viewing, registration, receiving a link or applying alone is not an execution grant.
+
+在获批版本、用途、期限及非生产环境内，授予非独占、不可转让、不可转授权的安装、运行、查看、必要工作/备份复制及本地研究修改权，用于个人学习、功能评估、性能测试及另获明确批准的非商业科研。默认90日，从批准记录的开始时间起算；记录必须载明起止时间、时区及条款版本。续期或扩大用途须另批。缺少批准起止时间的记录不构成完整运行授权。
+Within the approved version, purpose, term and non-production environment, the grant is non-exclusive, non-transferable and non-sublicensable and permits installation, execution, inspection, necessary working/backup copies and local research modifications for personal learning, evaluation, benchmarking and expressly approved noncommercial research. The default term is90 days from the approval's start time; the record must specify start/end times, time zone and terms version. Renewal or broader use requires further approval. A record without approved start/end times is not a complete execution grant.
+
+3. 商业及边界用途 / Commercial and boundary uses
+
+未经另行明确书面许可，受限材料不得用于销售、转售、出租软件或访问权，商业产品集成，收费求解/API/SaaS/托管，收费咨询、商业项目交付，企业盈利业务中的生产性使用，以及直接或间接商业收益活动。广告变现、引流获客、商业配套、销售演示、商业化开发验证，即使免费提供也须另批。
+Without separate explicit written permission, Restricted Materials may not be used for selling, reselling or renting software/access, commercial integration, paid solving/API/SaaS/hosting, paid consultancy, commercial deliverables, productive use in profit-making enterprise operations, or direct or indirect commercial benefit. Advertising, customer acquisition, commercial ancillary services, sales demonstrations and commercial development/validation need separate approval even if offered free.
+
+企业赞助、横向/委托或混合资助研究、商业转化、收费教学/培训、雇主评估及生产部署不属于默认范围，须逐项批准。学校、公益或免费身份不自动扩大权限。只说明用途类别，无需真实项目名、资助方名、参与者名单或证明；其他使用者分别申请，用途性质变更前取得补充批准。
+Sponsored, commissioned or mixed-funded research, commercial transfer, paid education/training, employer evaluation and production deployment are outside the default scope and require case-specific approval. Academic, charitable or free status does not expand rights. Describe only the purpose category without identifying project/sponsor names, participant lists or evidence. Other users apply separately; obtain supplemental approval before changing the nature of use.
+
+4. 修改、再分发和平台例外 / Modification, redistribution and platform exception
+
+获准本地修改注明账号/昵称、日期和差异并保留声明。除获准工作副本及备份外，不授予受限源码、二进制、wheel、容器、含受限代码补丁或修改版的再分发权；不得转授权、共享资格、代第三方持续计算或开放服务。这些限制仅适用于受限材料。
+Approved local changes identify the account/pseudonym, date and differences and retain notices. Apart from approved working copies/backups, redistribution of restricted source, binaries, wheels, containers, patches containing restricted code or modified versions is not granted. Sublicensing, eligibility sharing, ongoing computation for third parties and third-party services are not granted. These restrictions cover only Restricted Materials.
+
+公开GitHub托管保留其适用服务条款实际授予的平台内查看和fork权限，不额外授予平台范围外商用、运行、再分发或服务权。任何人可阅读和复制本许可及必要声明，用于了解、申请或遵守条款。向许可人提交反馈不自动转让修改版权；采纳或商业再许可前须另核实贡献者授权。
+Public GitHub hosting preserves on-platform viewing/forking permissions actually granted by its applicable terms, without additional commercial, execution, redistribution or service rights beyond that allowance. Anyone may read/copy this license and necessary notices to understand, request or comply with them. Feedback does not automatically assign modification copyright; incorporation or commercial relicensing requires a separate contribution-rights check.
+
+5. 结果、署名与所有权 / Results, attribution and ownership
+
+获准用途产生、不含受限代码或第三方保密内容的数值结果、图表和客观评价，可为同一获准目的交流发表，包括负面结论，无需许可人同意结论。合理注明ZYO版本/提交、实际引擎、参数、数据来源及修改，不暗示背书。本许可不转移使用者或第三方输入、输出或修改的所有权；商业结果利用须符合另批范围。
+Numerical results, figures and objective evaluations from authorized use may be shared/published for that purpose if they contain no restricted code or third-party confidential content, including negative findings without approval of conclusions. Reasonably identify ZYO version/commit, actual engine, parameters, sources and changes without implying endorsement. This license does not assign recipient/third-party inputs, outputs or modifications; commercial exploitation requires its separately approved scope.
+
+6. 许可人商业化保留 / Licensor's commercialization reservation
+
+获授权人的非商业限制不限制Ziyuan Li对自有或有权授权内容自行开发、商业许可、收费分发、软件/订阅销售、商业集成、收费求解/API/SaaS及咨询。可向不同使用者分别授予商业或非商业测试许可。测试资格不自动带来商业权限；历史和第三方权利依第1条保留。
+Recipient restrictions do not limit Ziyuan Li's development, commercial licensing, paid distribution, software/subscription sales, commercial integration, paid solving/API/SaaS or consulting for owned or authorized material. Different recipients may receive separate commercial or noncommercial test grants. Test eligibility does not confer commercial rights; clause1 preserves historical and third-party rights.
+
+7. 到期、违约与终止 / Expiry, breach and termination
+
+授权按批准期限届满终止，续期另批；超范围行为从未获准。首次可补救违约可通过原批准渠道书面通知并给予30日补救期，逾期未补救可终止。转售、泄露受限材料或密钥、危害服务安全或通知后持续滥用，可立即书面暂停或终止；恢复须明确书面确认。终止后停止覆盖的使用并删除相应工作副本，依法须保留存档可保存但不得继续运行；历史MIT、第三方合法权利及必要证据存档保留。
+The grant expires at its approved end time unless renewed; out-of-scope acts were never authorized. A first remediable breach may receive written notice through the approval channel and30 days to cure, followed by termination if uncured. Resale, disclosure of restricted material/keys, threats to service security or continued abuse after notice may result in immediate written suspension/termination; reinstatement requires explicit written confirmation. Stop covered use and delete associated working copies on termination; legally required archives may be retained but not executed. Historical MIT, lawful third-party rights and necessary evidence archives remain preserved.
+
+8. 保证与责任 / Warranties and liability
+
+在适用法律允许范围内，受限材料按现状和可用状态提供，不保证适销性、特定用途适用性、正确性、最优性、连续可用或不侵权。使用者负责独立核验，不将未经验证结果用于生产或安全关键决策。在法律允许范围内，许可人不对使用或不能使用所致直接、间接、附带、特殊或后果性损失负责，包括数据、利润或业务损失；法律禁止排除的责任保留。
+To the extent permitted by applicable law, Restricted Materials are provided as-is and as-available without warranties of merchantability, fitness, correctness, optimality, availability or noninfringement. Recipients must independently validate results and not use unvalidated output for production or safety-critical decisions. To the extent permitted by law, the licensor is not liable for direct, indirect, incidental, special or consequential loss from use or inability to use, including lost data, profits or business. Non-excludable liability is preserved.
+
+9. 其他权利与解释 / Other rights and interpretation
+
+本许可不单独授予商标、官方身份或明确专利许可；依法或依其他有效授权取得的权利保留。不选定排他法院，不推定许可人国籍或住所；法律与管辖按相关强制规则确定，另有有效书面约定除外。中英文意在表达同一范围，不因较宽译文自动扩大许可；实质歧义应书面澄清并服从强制解释规则。个别无效不影响其余可独立实施条款。
+No separate trademark, official-identity or express patent license is granted; rights arising by law or other valid grants remain preserved. No exclusive forum, nationality or residence is assumed; applicable law and jurisdiction follow relevant mandatory rules unless separately and validly agreed. Chinese/English intend the same scope, without automatic expansion through a broader translation; material ambiguity should be clarified in writing subject to mandatory interpretation rules. Invalidity of one term leaves independently enforceable terms intact.
+
+10. API、版本与变更 / API, versions and amendments
+
+API访问依docs/API-TERMS.md及独立账号/申请授权，本许可不发钥。新条款仅对明确采用它的后续材料或新授权适用，网站更新不追溯变更既有授权。特别许可应明确版本、账号/申请、用途和变更条款。未明确授予的受限材料权利保留。
+API access follows docs/API-TERMS.md and a separate account/request grant; this license issues no key. New terms apply only to later material or new grants expressly adopting them, not retroactively through website edits. Special grants identify version, account/request, purpose and amended clauses. Unexpressed rights in Restricted Materials are reserved.
+
+审核说明 / Review note: 本定制文本经许可人指示采用；工程核验不是法律意见。尚未完成独立专业法律审核，双语解释、接受证据、专利、限责及终止条款建议由合格法律专业人士复核。
+This custom text is adopted on the licensor's instruction; engineering verification is not legal advice. Independent qualified legal review remains outstanding; language, assent, patents, liability and termination merit professional review.
