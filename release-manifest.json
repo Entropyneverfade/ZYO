@@ -9,8 +9,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 2253,
-      "sha256": "6d72944fe8635d763ce421e2f685f3736e3b1b9557dfb09feff76f065b44f618"
+      "bytes": 5501,
+      "sha256": "059f532f3c0f30754d2422b9f9b467015e3d98d1ae3ce167f93082d9119c781a"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -24,8 +24,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 6164,
-      "sha256": "cca2ad8546f332b47bf1a56c5182508a99a042c39b42e947aacc275c051367b8"
+      "bytes": 6096,
+      "sha256": "eb067889129a9c7bf412af0569d87f81825a8b41e42a3885189cb0a7cc946139"
     },
     {
       "path": "THIRD_PARTY.md",
@@ -44,8 +44,8 @@
     },
     {
       "path": "docs/limitations.md",
-      "bytes": 4367,
-      "sha256": "a0f24d3891df83a4b2b18d3c846bb6619bb484a64bfe63c425c39b175fb7bfbf"
+      "bytes": 4849,
+      "sha256": "f151213783329289add23eeb1bd2364e1df971d7383259f70bf238c26749af15"
     },
     {
       "path": "docs/quickstart_zh.md",
@@ -106,6 +106,11 @@
       "path": "tests/test_sparse_infeasibility.py",
       "bytes": 7180,
       "sha256": "a2161120bbf248bf54b829aa55209ffeba52e6d1dccca70d92d29b94318d3147"
+    },
+    {
+      "path": "tests/test_sparse_newton.py",
+      "bytes": 4752,
+      "sha256": "99491df0fd4d0883da0c8d8f171a3ed77f2e5cd06af1a87a64fa58ef70baef16"
     },
     {
       "path": "tests/test_storage_periodic.py",
@@ -249,8 +254,8 @@
     },
     {
       "path": "zyo/sparse_lp.py",
-      "bytes": 16453,
-      "sha256": "457941b3b6f9c2def05bb35f7eb2f81c2e96ac932a9ef6bea5e6a9c865f36add"
+      "bytes": 20713,
+      "sha256": "20dda91d0ce558e5cc377742649437df10fd0509ef1244234869f6c742195a54"
     },
     {
       "path": "zyo/sparse_mip.py",

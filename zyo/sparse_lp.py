@@ -111,12 +111,14 @@ def _normal_solver(A,ratio):
     return solve,statistics
 
 
-def _augmented_solver(A,x,s,rp,rd):
+def _augmented_solver(A,x,s,rp,rd,statistics=None,stabilize=None):
     """Solve the unsquared Newton system with symmetric diagonal scaling.
 
 Normal equations can lose rank numerically as x/s separates near a vertex.
 This augmented system avoids forming A*diag(x/s)*A', and checks the original
-Newton equations. No regularization changes the optimization model.
+Newton equations. A positive dual block stabilizes the factorization even
+when rows are dependent; refinement and acceptance use the UNREGULARIZED
+equations. No regularization changes the optimization model.
 """
     n=len(x)
     # 增广系统避免直接形成正规方程造成条件数平方；方向还须通过原始牛顿方程检查。
@@ -125,22 +127,71 @@ Newton equations. No regularization changes the optimization model.
     scale_rows=1./np.sqrt(np.maximum(np.asarray(column_scaled.power(2).sum(axis=1)).ravel(),1e-30))
     C=(diags(scale_rows)@column_scaled).tocsc()
     K=bmat([[-eye(n,format='csc'),C.T],[C,None]],format='csc')
-    lu=splu(K,permc_spec='COLAMD')
+    statistics={} if statistics is None else statistics
+    lu=None
+    if stabilize is None or not stabilize:
+        try:
+            lu=splu(K,permc_spec='COLAMD')
+        except RuntimeError:
+            if stabilize is False:
+                raise
+    if stabilize is None:
+        # 仅在LP初始 x=s=1 时判断分解风险，避免将临近顶点的正常尺度分离误当成初始秩亏。
+        # U主元比例只是选择数值路径的启发式，不是删行依据，也不声明精确矩阵秩。
+        pivots=np.abs(lu.U.diagonal()) if lu is not None else np.array([0.])
+        pivot_ratio=float(np.min(pivots,initial=1.)/max(1.,float(np.max(pivots,initial=0))))
+        stabilize=lu is None or pivot_ratio<=64*np.finfo(float).eps
+        statistics['initial_pivot_ratio']=pivot_ratio
+    statistics['stabilized']=bool(stabilize)
+    # K 的右下零块在等式相关时导致奇异或巨大零空间乘子。正对角块使 Schur 补
+    # C*C' + ridge*I 正定；这是线性方程预条件分解，不是给原约束/目标加惩罚。
+    # 单位行范数缩放后使用 sqrt(eps) 平衡舍入放大与扰动，随后用原 K 消除扰动。
+    ridge=math.sqrt(np.finfo(float).eps) if stabilize else 0.
+    if stabilize:
+        regularized=K+diags(np.r_[np.zeros(n),np.full(A.shape[0],ridge)])
+        lu=splu(regularized.tocsc(),permc_spec='COLAMD')
+    unregularized=None
+    unregularized_statistics={}
     def solve(rc):
+        nonlocal unregularized
         rhs=np.r_[scale_x*(rd-rc/x),scale_rows*rp]
         step=lu.solve(rhs)
-        for _ in range(3):
-            defect=rhs-K@step
-            if np.max(np.abs(defect),initial=0)<=1e-11*(1+np.max(np.abs(rhs),initial=0)):
-                break
-            step+=lu.solve(defect)
-        dx=scale_x*step[:n]; dy=scale_rows*step[n:]
-        ds=rd-A.T@dy
-        primal=float(np.max(np.abs(A@dx-rp),initial=0))
-        complement=float(np.max(np.abs(s*dx+x*ds-rc),initial=0))
-        if primal>1e-9*(1+np.max(np.abs(rp),initial=0)) or complement>1e-9*(1+np.max(np.abs(rc),initial=0)):
-            raise ArithmeticError('Augmented Newton equations failed original residual check')
-        return dx,dy,ds
+        original_refinements=0
+        if not stabilize:
+            # 初始分解没有秩亏风险时，保留原来的数值轨迹，避免无条件扰动正常LP/不可行分支。
+            for _ in range(3):
+                defect=rhs-K@step
+                if np.max(np.abs(defect),initial=0)<=1e-11*(1+np.max(np.abs(rhs),initial=0)):
+                    break
+                step+=lu.solve(defect)
+                original_refinements+=1
+        for refinement in range(9 if stabilize else 1):
+            dx=scale_x*step[:n]; dy=scale_rows*step[n:]
+            ds=rd-A.T@dy
+            primal=float(np.max(np.abs(A@dx-rp),initial=0))
+            complement=float(np.max(np.abs(s*dx+x*ds-rc),initial=0))
+            # 不能只看缩放/正则化系统残差：还原方向后必须满足原有两项1e-9门。
+            if (all(np.all(np.isfinite(v)) for v in (dx,dy,ds))
+                    and primal<=1e-9*(1+np.max(np.abs(rp),initial=0))
+                    and complement<=1e-9*(1+np.max(np.abs(rc),initial=0))):
+                statistics.update(regularization=ridge,refinement_steps=original_refinements+refinement,
+                                  unregularized_fallback=False)
+                return dx,dy,ds
+            if stabilize and refinement<8:
+                step+=lu.solve(rhs-K@step)
+        if stabilize:
+            # 主元启发式也会选中近相关的满秩矩阵；若稳定化改进受限，仍尝试原分解，
+            # 并复用相同的原方程门。两种分解均为基础线性代数，实际采用路径写入日志。
+            try:
+                if unregularized is None:
+                    unregularized=_augmented_solver(A,x,s,rp,rd,unregularized_statistics,False)
+                step=unregularized(rc)
+            except RuntimeError as exc:
+                raise ArithmeticError('Augmented factorization alternatives exhausted') from exc
+            statistics.update(unregularized_statistics,unregularized_fallback=True)
+            return step
+        # 不一致的相关行不能靠正则化通过；拒绝方向，由原有失败/证书逻辑处理。
+        raise ArithmeticError('Augmented Newton equations failed original residual check')
     return solve
 
 
@@ -188,6 +239,7 @@ def _solve_relaxation(model,lower,upper,options,deadline):
         return SparseLPResult(status,lo.copy(),objective,certificate['bound'],lam,
                               message='Fixed-box primal and dual arithmetic checked',certificate=certificate)
     x=np.ones(n); s=np.ones(n); y=np.zeros(len(b))
+    stabilize_augmented=None
     # 允许初始点原始/对偶不可行，但 x、s 保持正；rp、rd、mu 分别为两类残差和平均互补量。
     zero_multipliers=np.zeros(len(model.constraints))
     simple_certificate=box_bound(model,zero_multipliers,lo,hi)
@@ -234,18 +286,27 @@ def _solve_relaxation(model,lower,upper,options,deadline):
                 if iteration==options.iteration_limit:
                     break
                 try:
-                    augmented=_augmented_solver(A,x,s,rp,rd)
+                    augmented_statistics={}
+                    augmented=_augmented_solver(A,x,s,rp,rd,augmented_statistics,stabilize_augmented)
+                    stabilize_augmented=augmented_statistics['stabilized']
+                    if 'initial_pivot_ratio' in augmented_statistics:
+                        history[-1]['initial_augmented_pivot_ratio']=augmented_statistics['initial_pivot_ratio']
                 except RuntimeError:
                     augmented=None  # Redundant equality rows can be rank deficient.
                 normal=None
                 linear_methods=[]
                 linear_ridge=0.
+                linear_refinements=0
+                linear_factorization_fallbacks=0
                 def direction_step(rc):
-                    nonlocal normal,linear_ridge
+                    nonlocal normal,linear_ridge,linear_refinements,linear_factorization_fallbacks
                     if augmented is not None:
                         try:
                             step=augmented(rc)
-                            linear_methods.append('scaled_augmented')
+                            linear_methods.append('scaled_augmented_refinement' if augmented_statistics['regularization'] else 'scaled_augmented')
+                            linear_ridge=max(linear_ridge,augmented_statistics['regularization'])
+                            linear_refinements=max(linear_refinements,augmented_statistics['refinement_steps'])
+                            linear_factorization_fallbacks+=int(augmented_statistics['unregularized_fallback'])
                             return step
                         except ArithmeticError:
                             pass
@@ -269,7 +330,9 @@ def _solve_relaxation(model,lower,upper,options,deadline):
                 alpha_x=_step(x,dx,.995); alpha_s=_step(s,ds,.995)
                 x+=alpha_x*dx; y+=alpha_s*dy; s+=alpha_s*ds
                 history[-1].update(step_primal=alpha_x,step_dual=alpha_s,
-                                   linear_systems_used=linear_methods,regularization=linear_ridge)
+                                   linear_systems_used=linear_methods,regularization=linear_ridge,
+                                   augmented_refinement_steps=linear_refinements,
+                                   augmented_unregularized_fallbacks=linear_factorization_fallbacks)
     except (ArithmeticError,FloatingPointError,RuntimeError,ValueError) as exc:
         failure='NUMERICAL_ERROR'; message=str(exc)
     if failure=='NUMERICAL_ERROR':

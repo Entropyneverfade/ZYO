@@ -60,13 +60,15 @@ if r.has_solution:
 
 已有一个 8760 小时合成储能循环 MILP 的自主运行证据，但其搜索仅一个根节点，详见能力说明。
 
+2026-09-08 更新：自主稀疏内核加入稳定化 Newton 分解和原方程迭代校正，3×3 独立解析题最优值为 88；10×10、30×30 运输 LP 各三次通过，目标分别为 182、172。20 题开发测评中的 18 个有限最优题，三次稳定通过数由 13 提高到 15。新增 4 项相关回归，详见[版本记录](CHANGELOG.md)。
+
 许可证为 MIT，保留原始版权声明。
 
 ---
 
 ## English
 
-ZYO is a locally runnable, editable, general-purpose **research prototype** for linear and mixed-integer linear optimization. It includes a Python modeling API, independent algorithms, and small single-node storage applications. It is **not an industrial replacement for Gurobi, COPT or HiGHS**; independently verify results before using them in research or decisions.
+ZYO is a locally runnable, editable, general-purpose **research development project** for linear and mixed-integer linear optimization. It includes a Python modeling API, independent algorithms, and single-node storage teaching applications. Downloads and discussion are welcome. The author describes the project as developed with ChatGPT 6, is also learning, and welcomes exchanges with fellow optimization enthusiasts.
 
 - `native`: ZYO's dense two-phase tableau simplex and basic branch-and-bound; requires NumPy and retains a dense-size guard.
 - `native_sparse`: ZYO's experimental sparse primal-dual predictor/corrector method, finite-box bounds and branch-and-bound. It requires explicit finite variable bounds. NumPy and SciPy sparse/SuperLU supply numerical linear algebra, **not optimization engines**.
@@ -76,6 +78,8 @@ Use the installation commands above with 64-bit Python 3.10+. On Linux/macOS rep
 
 The example above minimizes `3*x+2*y` subject to `x+2*y>=4`, with bounded continuous `x` and binary `y`. Its hand-checked optimum is `x=2, y=1, objective=8`. Always inspect status, incumbent, bound, gap and original-model residuals: a feasible point or a time limit does not prove optimality.
 
-The public tests include independently specified examples and 60 frozen small integer development regressions. They are **not an unseen holdout set or an international ranking**. A single synthetic 8760-hour cyclic storage MILP has been solved by the native sparse path, but closed at the root node; it does not establish general hard-MILP or year-long unit-commitment capability. Numerical robustness and infeasibility detection remain limited.
+The public tests include independently specified core/storage examples and 60 frozen small integer development regressions. A synthetic 8760-hour cyclic storage MILP has native sparse execution evidence, with search closing at one root node; see the capability notes for its measured scope.
 
-This screened export retains the existing algorithm files without solver rewrites. Private local experiments and complete workstation history are not published. Python identifiers remain English; Chinese maintenance comments and English module descriptions support bilingual development. Distributed under the existing MIT license. Please submit small, shareable reproductions without credentials or unauthorized research data.
+2026-09-08 update: the native sparse kernel adds stabilized Newton factorization and original-equation iterative refinement. The independent 3×3 analytical fixture reaches objective 88. The 10×10 and 30×30 transportation LPs pass all three repeats at objectives 182 and 172. Across the 18 finite-optimum instances in the 20-instance development assessment, three-repeat successes increase from 13 to 15. Four regression tests accompany the fix; see the [changelog](CHANGELOG.md).
+
+Distributed under the MIT license, retaining the original copyright notice. English Python identifiers and Chinese maintenance comments support bilingual development.
