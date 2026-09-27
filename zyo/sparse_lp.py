@@ -28,18 +28,84 @@ class SparseLPResult:
     certificate: object=None
     infeasibility_certificate: object=None
     feasibility_recovery: object=None  # 辅助问题的真实预算、状态和乘子来源。
+    domain_transform: object=None  # 非有限变量域的等价映射记录；有限盒模型为 None。
+
+    def values_for(self,model):
+        # 按给定模型的变量顺序取名取值；供域变换回映射使用，不改变解的语义。
+        if self.x is None:
+            return {}
+        return {var.name:float(self.x[var.index]) for var in model.variables}
+
+
+def _certificate_with_scale(model,multipliers,lo,hi,standard):
+    # 记录标准化尺度与行来源：标准化问题含每变量的盒行，只有映射回原行的乘子
+    # 才能用于原域证书或域变换回拉。尺度标错会得到错误的界，因此必须与乘子同源。
+    values=np.asarray(multipliers,dtype=float)
+    certificate=box_bound(model,values,lo,hi)
+    certificate.update(scaled_multipliers=values.tolist(),
+                       row_origins=standard['row_origins'].tolist(),
+                       cost_scale=standard['cost_scale'],
+                       scales=standard['scales'].tolist())
+    return certificate
+
+
+def _canonical_model(model):
+    """Rewrite every ``>=`` row into an equivalent ``<=`` row.
+
+    The model stores a row as ``activity SENSE 0``, so ``sum(a_j x_j) >= c`` is
+    equivalent to ``sum(-a_j x_j) <= -c``. Both the coefficients and the constant
+    must be negated together; negating only one of them changes the constraint.
+
+    This is a defensive invariant, not a defect repair: an A/B run against the
+    previous kernel over six ``>=``-heavy finite-box models returned bit-identical
+    statuses, objectives, bounds and solutions. Canonicalising keeps
+    :func:`_standard_form` on a single, explicitly justified slack sign instead of
+    two. Variables, objective, bounds and the number/identity of the rows are
+    untouched, so every dual quantity keeps its meaning. Returns the original model
+    when nothing needs rewriting.
+    """
+    if not any(row.sense=='>=' for row in model.constraints):
+        return model
+    from lzyopt.model import Constraint, LinearExpression
+    from .model import Model
+    rewritten=Model(model.name)
+    for var in model.variables:
+        rewritten.add_var(var.name,lb=var.lb,ub=var.ub,kind=var.kind)
+    for row in model.constraints:
+        if row.sense=='>=':
+            # 行以 "活动量 >= 0" 存储：系数与常数必须同时取反，语义约束才不变。
+            terms={i:-a for i,a in row.expression.terms.items()}
+            constant=-row.expression.constant
+            sense='<='
+        else:
+            terms=dict(row.expression.terms)
+            constant=row.expression.constant
+            sense=row.sense
+        rewritten.add_constr(Constraint(LinearExpression(rewritten,terms,constant),sense),name=row.name)
+    rewritten.set_objective(LinearExpression(rewritten,dict(model.objective.terms),
+                                             model.objective.constant),model.sense)
+    return rewritten
 
 
 def _standard_form(model,lo,hi):
-    # 以 x=lo+(hi-lo)*z 映射有限盒至 [0,1]，固定变量消去；不等式加入带正确符号的松弛。
-    """Finite-box affine map and explicit nonnegative inequality slacks."""
+    # 以 x=lo+(hi-lo)*z 映射有限盒至 [0,1]，固定变量消去。
+    """Finite-box affine map and explicit nonnegative inequality slacks.
+
+    Rows are expected as ``<=`` or ``==`` (see :func:`_canonical_model`), so the
+    nonnegative slack always enters as ``+s`` for an inequality. The box map keeps
+    a row's activity unchanged, hence the stored constant already carries the
+    right-hand side.
+    """
     width=hi-lo
     active=np.flatnonzero(width>0)
     index=np.full(len(lo),-1,dtype=int)
     index[active]=np.arange(len(active))
-    rows=[]; cols=[]; data=[]; rhs=[]; origins=[]; scales=[]
+    rows=[]; cols=[]; data=[]; rhs=[]; origins=[]; scales=[]; row_origins=[]
     slack_rows=[]
     for original,row in enumerate(model.constraints):
+        if row.sense not in ('<=','=='):
+            # 调用方必须先经 _canonical_model；此处不猜测 >= 的松弛符号。
+            raise ValueError('Standard form requires <= or == rows; got '+repr(row.sense))
         b=-math.fsum([row.expression.constant,*[a*lo[i] for i,a in row.expression.terms.items()]])
         terms=[(index[i],a*width[i]) for i,a in row.expression.terms.items() if index[i]>=0]
         scale=max([abs(a) for _,a in terms],default=0.)
@@ -51,13 +117,13 @@ def _standard_form(model,lo,hi):
         j=len(rhs)
         for i,a in terms:
             rows.append(j); cols.append(i); data.append(a/scale)
-        rhs.append(b/scale); origins.append(original); scales.append(scale)
+        rhs.append(b/scale); origins.append(original); scales.append(scale); row_origins.append(original)
         if row.sense!='==':
-            slack_rows.append((j,1. if row.sense=='<=' else -1.))
+            slack_rows.append((j,1.))
     for i in range(len(active)):
         j=len(rhs)
         rows.append(j); cols.append(i); data.append(1.)
-        rhs.append(1.); origins.append(-1); scales.append(1.)
+        rhs.append(1.); origins.append(-1); scales.append(1.); row_origins.append(-1)
         slack_rows.append((j,1.))
     for k,(j,sign) in enumerate(slack_rows):
         rows.append(j); cols.append(len(active)+k); data.append(sign)
@@ -69,7 +135,8 @@ def _standard_form(model,lo,hi):
             cost[index[i]]=direction*c*width[i]
     cost_scale=max(1.,float(np.max(np.abs(cost),initial=0)))
     return dict(A=matrix,b=np.asarray(rhs),c=cost/cost_scale,cost_scale=cost_scale,
-                active=active,width=width,origins=np.asarray(origins),scales=np.asarray(scales)),None
+                active=active,width=width,origins=np.asarray(origins),scales=np.asarray(scales),
+                row_origins=np.asarray(row_origins)),None
 
 
 def _step(x,dx,fraction=1.):
@@ -78,7 +145,7 @@ def _step(x,dx,fraction=1.):
     return min(1.,fraction*float(np.min(-x[negative]/dx[negative]))) if np.any(negative) else 1.
 
 
-def _normal_solver(A,ratio):
+def _normal_solver(A,ratio,deadline=None):
     # 正规方程 A*diag(x/s)*A' 的缩放与分解；正则化仅帮助解线性方程，不改变优化模型。
     matrix=(A.multiply(ratio)@A.T).tocsc()
     scale=1./np.sqrt(np.maximum(matrix.diagonal(),1e-30))
@@ -88,10 +155,13 @@ def _normal_solver(A,ratio):
     def solve(rhs):
         for ridge in (0.,1e-12,1e-10,1e-8):
             if ridge not in factors:
+                # 与增广系统一致：分解本身不可中断，但每个候选正则项之前都设检查点。
+                _check_deadline(deadline)
                 try:
                     factors[ridge]=splu(equilibrated+ridge*eye(A.shape[0],format='csc'),permc_spec='MMD_AT_PLUS_A')
                 except RuntimeError:
                     factors[ridge]=None
+                _check_deadline(deadline)
             lu=factors[ridge]
             if lu is None:
                 continue
@@ -178,7 +248,26 @@ class _AugmentedAssembly:
                           shape=(sum(C.shape),sum(C.shape)))
 
 
-def _augmented_solver(A,x,s,rp,rd,statistics=None,stabilize=None,assembly=None):
+class DeadlineExceeded(Exception):
+    """Raised when a time budget runs out inside a Newton step.
+
+    The IPM checks its deadline once per iteration, but a **single** iteration's sparse LU
+    factorization of the augmented system can take longer than the whole budget. Measured on
+    MIPLIB's ``neos-4763324-toguru`` (106954 rows / 53593 columns / 266805 nonzeros) with
+    ``time_limit=60``: the process stayed inside ``scipy...linsolve.splu``, called from
+    :func:`_augmented_solver`, for more than 1000 s and grew to 13.6 GB RSS — the stack was
+    captured with ``faulthandler`` in ``docs/research/probe_sparse_deadline_stack.py``. The
+    factorization itself cannot be interrupted, but every phase *around* it can be, so the
+    overrun is bounded by one factorization instead of by the whole solve.
+    """
+
+
+def _check_deadline(deadline):
+    if deadline is not None and time.perf_counter() >= deadline:
+        raise DeadlineExceeded()
+
+
+def _augmented_solver(A,x,s,rp,rd,statistics=None,stabilize=None,assembly=None,deadline=None):
     """Solve the unsquared Newton system with symmetric diagonal scaling.
 
 Normal equations can lose rank numerically as x/s separates near a vertex.
@@ -196,12 +285,15 @@ equations. No regularization changes the optimization model.
     K=_augmented_matrix(C) if assembly is None else assembly(C)
     statistics={} if statistics is None else statistics
     lu=None
+    # 装配之后、分解之前、分解之后各设检查点：分解本身不可中断，但它前后的工作可以。
+    _check_deadline(deadline)
     if stabilize is None or not stabilize:
         try:
             lu=splu(K,permc_spec='COLAMD')
         except RuntimeError:
             if stabilize is False:
                 raise
+    _check_deadline(deadline)
     if stabilize is None:
         # 仅在LP初始 x=s=1 时判断分解风险，避免将临近顶点的正常尺度分离误当成初始秩亏。
         # U主元比例只是选择数值路径的启发式，不是删行依据，也不声明精确矩阵秩。
@@ -215,8 +307,10 @@ equations. No regularization changes the optimization model.
     # 单位行范数缩放后使用 sqrt(eps) 平衡舍入放大与扰动，随后用原 K 消除扰动。
     ridge=math.sqrt(np.finfo(float).eps) if stabilize else 0.
     if stabilize:
+        _check_deadline(deadline)
         regularized=K+diags(np.r_[np.zeros(n),np.full(A.shape[0],ridge)])
         lu=splu(regularized.tocsc(),permc_spec='COLAMD')
+        _check_deadline(deadline)
     unregularized=None
     unregularized_statistics={}
     def solve(rc):
@@ -266,6 +360,18 @@ equations. No regularization changes the optimization model.
 
 
 def solve_relaxation(model,lower,upper,options,deadline):
+    """Solve one node LP.
+
+    Non-finite variable domains never reach this function: the sparse driver in
+    :mod:`zyo.sparse_mip` resolves them by an exact affine reformulation onto a
+    finite box before searching, so every node here has a genuine finite box. The
+    ``>=`` rows are canonicalised here as well, because this entry point is also
+    called directly and :func:`_standard_form` requires ``<=``/``==`` rows.
+    """
+    return solve_resolved(_canonical_model(model),lower,upper,options,deadline)
+
+
+def solve_resolved(model,lower,upper,options,deadline):
     # 算术异常只返回数值未决；不可行判断需要单独的充分证书。
     try:
         with np.errstate(over='raise',invalid='raise',divide='raise'):
@@ -338,6 +444,8 @@ def _recover_infeasibility(model,lower,upper,options,deadline,result):
 
 
 def _solve_relaxation(model,lower,upper,options,deadline):
+    # 进入标准化前必须已规范化；直接调用方（含测试）由 solve_relaxation 保证。
+    model=_canonical_model(model)
     lo=np.asarray(lower,dtype=float); hi=np.asarray(upper,dtype=float)
     if not np.all(np.isfinite(lo)) or not np.all(np.isfinite(hi)):
         return SparseLPResult('UNKNOWN',message='native_sparse requires finite lower and upper bounds')
@@ -366,6 +474,9 @@ def _solve_relaxation(model,lower,upper,options,deadline):
         objective=direction*objective_value(model,lo)
         lam=np.zeros(len(model.constraints))
         certificate=box_bound(model,lam,lo,hi)
+        # 记录标准化尺度，使乘子可换算回原模型单位（域变换回拉需要）。
+        certificate.update(scaled_multipliers=lam.tolist(),row_origins=[-1],
+                           cost_scale=1.,scales=[1.])
         checked=primal_check(model,lo)
         gap=(objective-certificate['bound'])/max(1.,abs(objective))
         status='OPTIMAL' if max(checked.values())<=options.feasibility_tol and gap<=options.objective_tol else 'NUMERICAL_ERROR'
@@ -403,9 +514,10 @@ def _solve_relaxation(model,lower,upper,options,deadline):
                     for j,row in enumerate(model.constraints):
                         if row.sense=='<=': lam[j]=min(0.,lam[j])
                         if row.sense=='>=': lam[j]=max(0.,lam[j])
-                    certificate=box_bound(model,lam,lo,hi)
+                    certificate=_certificate_with_scale(model,lam,lo,hi,standard)
                     if simple_certificate['bound']>certificate['bound']:
-                        certificate=simple_certificate
+                        # 零乘子的界更紧时回退该界，但同样必须携带可换算的乘子与尺度。
+                        certificate=_certificate_with_scale(model,zero_multipliers,lo,hi,standard)
                         lam=zero_multipliers.copy()
                     checked=primal_check(model,original)
                     objective=direction*objective_value(model,original)
@@ -422,10 +534,13 @@ def _solve_relaxation(model,lower,upper,options,deadline):
                     break
                 try:
                     augmented_statistics={}
-                    augmented=_augmented_solver(A,x,s,rp,rd,augmented_statistics,stabilize_augmented,augmented_assembly)
+                    augmented=_augmented_solver(A,x,s,rp,rd,augmented_statistics,stabilize_augmented,augmented_assembly,deadline)
                     stabilize_augmented=augmented_statistics['stabilized']
                     if 'initial_pivot_ratio' in augmented_statistics:
                         history[-1]['initial_augmented_pivot_ratio']=augmented_statistics['initial_pivot_ratio']
+                except DeadlineExceeded:
+                    # 时间预算在牛顿步内部耗尽：如实报 TIME_LIMIT，不把半成品方向当成解。
+                    failure='TIME_LIMIT'; message='LP time limit (inside a Newton step)'; break
                 except RuntimeError:
                     augmented=None  # Redundant equality rows can be rank deficient.
                 normal=None
@@ -446,7 +561,7 @@ def _solve_relaxation(model,lower,upper,options,deadline):
                         except ArithmeticError:
                             pass
                     if normal is None:
-                        normal=_normal_solver(A,x/s)
+                        normal=_normal_solver(A,x/s,deadline)
                     normal_solve,statistics=normal
                     dy=normal_solve(rp-A@((rc-x*rd)/s))
                     ds=rd-A.T@dy
@@ -456,12 +571,18 @@ def _solve_relaxation(model,lower,upper,options,deadline):
                     linear_methods.append('normal_equations_refinement')
                     linear_ridge=max(linear_ridge,statistics['regularization'])
                     return dx,dy,ds
-                dx_a,dy_a,ds_a=direction_step(-x*s)
+                try:
+                    dx_a,dy_a,ds_a=direction_step(-x*s)
+                except DeadlineExceeded:
+                    failure='TIME_LIMIT'; message='LP time limit (inside a Newton step)'; break
                 # 仿射预测步估计互补量，再用中心化及二阶修正项构造校正方向。
                 alpha_x=_step(x,dx_a); alpha_s=_step(s,ds_a)
                 mu_aff=float((x+alpha_x*dx_a)@(s+alpha_s*ds_a)/n)
                 sigma=min(1.,max(0.,(mu_aff/mu)**3))
-                dx,dy,ds=direction_step(sigma*mu-x*s-dx_a*ds_a)
+                try:
+                    dx,dy,ds=direction_step(sigma*mu-x*s-dx_a*ds_a)
+                except DeadlineExceeded:
+                    failure='TIME_LIMIT'; message='LP time limit (inside a Newton step)'; break
                 alpha_x=_step(x,dx,.995); alpha_s=_step(s,ds,.995)
                 x+=alpha_x*dx; y+=alpha_s*dy; s+=alpha_s*ds
                 history[-1].update(step_primal=alpha_x,step_dual=alpha_s,

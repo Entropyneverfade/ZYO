@@ -1,5 +1,22 @@
 # 版本记录 / Changelog
 
+## 0.3.5 — 2026-09-27 · 原生认证LP与单步效率 / Native certified LP and step efficiency
+
+- 交付自主`native_simplex` LP接口、Phase-I、原始—对偶证书和双语手算教程。
+- 完成共享动作预算与全成功LU统计，复用基下标并向量执行基值更新。
+- 完成大题连续松弛六次交错同额度比较，完整数学轨迹一致，中位Phase-I耗时减少13.49%。
+- 完成Netlib四开发题×三独立进程KKT验收，12/12通过。
+- 完成459项研发回归、283项非editable安装公开测试及手算教程原生证书复现。
+- 登记0.3.5自有新增表达的许可范围，维持用途申请、历史MIT和第三方说明。
+
+English: delivered the certified native LP API and bilingual analytical guide; completed shared
+update budgets, successful-LU telemetry and equivalent step optimization; preserved full mathematical
+trajectories across six frozen native development runs with13.49% lower median Phase-I time;
+passed12/12 independently audited Netlib calls; registered the scoped0.3.5 additions.
+Passed459 development regressions,283 independently installed public tests and the analytical
+native tutorial under an external-optimizer embargo.
+[模型、输入输出、实测与使用 / Model, I/O, measurements and usage](docs/releases/0.3.5.md)。
+
 ## 0.3.4 — 2026-09-08 · 正式许可切换 / Formal licensing transition
 
 - 采用ZYO非商业测试许可1.0.0，登记许可人Ziyuan Li、日期、适用范围和商业化保留。

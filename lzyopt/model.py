@@ -125,6 +125,25 @@ class Model:
         self.constraints = []
         self.objective = LinearExpression()
         self.sense = "min"
+        self._variable_names = {}
+
+    def name_index(self):
+        """Name -> position map, maintained incrementally.
+
+        ``add_var`` used to test name uniqueness with ``name in {v.name for v in
+        self.variables}``, which rebuilds a set of every existing name on **each** call: O(n)
+        per variable and therefore O(n^2) per model. Measured on MIPLIB's
+        ``neos-4763324-toguru`` (a 13 MiB MPS with ~480k records) the read did not finish within
+        900 s and grew past 8 GB of RSS, while the parse loop itself is linear — the quadratic
+        name check was the whole cost. The map is rebuilt lazily whenever it is missing or out of
+        step with ``variables``, so models restored from an older pickle (which has no such
+        attribute) keep working.
+        """
+        index = getattr(self, '_variable_names', None)
+        if index is None or len(index) != len(self.variables):
+            index = {v.name: position for position, v in enumerate(self.variables)}
+            self._variable_names = index
+        return index
 
     def add_var(self, name=None, lb=0.0, ub=None, kind="C"):
         """kind C/I/B; None lower/upper bounds mean -infinity/+infinity."""
@@ -137,10 +156,15 @@ class Model:
         if kind == "B":
             lb, ub = max(0.0, lb), min(1.0, ub)
         name = str(name if name is not None else f"x{len(self.variables)}")
-        if not name or name in {v.name for v in self.variables}:
+        # 只取一次索引对象并**就地**更新：若在 append 之后再次调用 name_index()，它会看到
+        # len(index) != len(variables) 而重建整张表，于是又退回 O(n^2)（实测 40000 个变量
+        # 仍要 44.8 秒、4 倍规模耗时 17.5 倍）。返回值就是 self 上那张表，就地写即可同步。
+        index = self.name_index()
+        if not name or name in index:
             raise ValueError("Variable names must be nonempty and unique")
         variable = Variable(self, len(self.variables), name, lb, ub, kind)
         self.variables.append(variable)
+        index[name] = variable.index
         return variable
 
     def _check(self, expression):

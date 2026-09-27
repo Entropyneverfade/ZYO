@@ -1,7 +1,7 @@
 # 第三方与历史许可 / Third-party and historical notices
 
-ZYO0.3.4采用分范围许可：受限新增内容依根LICENSE；历史MIT全文见LICENSES/MIT-legacy.txt，逐文件公开基线见LICENSES/MIT-BASELINE.json，范围见LICENSE-SCOPE.json。既有求解/应用内核保留MIT；原署名LZYOpt contributors继续保留。新条款不主张第三方代码或数据归Ziyuan Li独占。
-ZYO0.3.4 uses scoped terms: root LICENSE for eligible additions, LICENSES/MIT-legacy.txt for inherited text, LICENSES/MIT-BASELINE.json for baseline identity and LICENSE-SCOPE.json for scope. Existing solver/application kernels retain MIT and the LZYOpt contributors attribution. New terms do not claim exclusive ownership of third-party code or data.
+ZYO0.3.5延用分范围许可：受限新增内容依根LICENSE；历史MIT全文见LICENSES/MIT-legacy.txt，逐文件公开基线见LICENSES/MIT-BASELINE.json，范围见LICENSE-SCOPE.json。既有求解/应用内核的MIT部分及原署名LZYOpt contributors继续保留；新增认证LP和修复的有权授权表达逐路径登记，不将整个混合文件改称专有。新条款不主张第三方代码或数据归Ziyuan Li独占。
+ZYO0.3.5 retains scoped terms: root LICENSE for eligible additions, LICENSES/MIT-legacy.txt for inherited text, LICENSES/MIT-BASELINE.json for baseline identity and LICENSE-SCOPE.json for scope. Baseline solver/application portions retain MIT and the LZYOpt contributors attribution. Eligible new certified-LP and repair expression is registered per path, not as exclusive ownership of entire mixed files. Third-party rights remain separate.
 
 | 组件 / Component | 用途和许可边界 / Use and terms |
 |---|---|

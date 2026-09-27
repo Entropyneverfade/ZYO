@@ -11,6 +11,7 @@ from .base import BackendInfo
 _MODULES = {
     "native": "zyo.solvers.native",
     "native_sparse": "zyo.solvers.native_sparse",
+    "native_simplex": "zyo.solvers.native_simplex",
     "highs": "zyo.solvers.highs",
     "gurobi": "zyo.solvers.gurobi",
     "copt": "zyo.solvers.copt",

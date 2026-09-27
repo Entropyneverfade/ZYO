@@ -53,12 +53,22 @@ class NativeSparseTests(unittest.TestCase):
                                ({'node_limit':0},zyo.Status.NODE_LIMIT),
                                ({'iteration_limit':0},zyo.Status.ITERATION_LIMIT)]:
             self.assertEqual(m.solve('native_sparse',**kwargs).status,status)
+        # 真正无界的模型：y 只有上界 0（必须显式写 lb=None，否则默认下界为 0）
+        # 且目标为 min y，可令 y -> -inf。域解析路径必须报 UNBOUNDED（或至少未决），
+        # 绝不报告最优，也绝不返回被人造上界裁剪出来的候选。
         unbounded_box=zyo.Model()
-        y=unbounded_box.add_var('y')
+        y=unbounded_box.add_var('y',lb=None,ub=0)
         unbounded_box.minimize(y)
         r=unbounded_box.solve('native_sparse')
-        self.assertEqual(r.status,zyo.Status.UNKNOWN)
-        self.assertIn('finite',r.termination_reason)
+        self.assertNotEqual(r.status,zyo.Status.OPTIMAL,r.termination_reason)
+        self.assertFalse(r.has_solution)
+        # 有下界且目标在界上取到有限最优的模型仍须给出最优，而不是含糊未决。
+        bounded=zyo.Model()
+        z=bounded.add_var('z',lb=0,ub=None)
+        bounded.minimize(z)
+        r2=bounded.solve('native_sparse')
+        self.assertEqual(r2.status,zyo.Status.OPTIMAL,r2.termination_reason)
+        self.assertAlmostEqual(r2.objective,0.0,places=7)
 
     def test_fresh_process_blocks_every_external_optimizer_import(self):
         code='''

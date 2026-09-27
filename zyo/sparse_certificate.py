@@ -75,7 +75,8 @@ def box_bound(model, multipliers, lower=None, upper=None):
     if not math.isfinite(bound):
         raise ValueError('Bound arithmetic is non-finite')
     return dict(bound=bound,raw_bound=raw,roundoff_allowance=allowance,
-                direction=direction,scope='floating-point original-box weak-duality bound')
+                direction=direction,multipliers=lam.tolist(),
+                scope='floating-point original-box weak-duality bound')
 
 
 @np.errstate(over='raise',invalid='raise',divide='raise',under='raise')

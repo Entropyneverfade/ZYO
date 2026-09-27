@@ -1,4 +1,4 @@
-# ZYO 0.3.4 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
+# ZYO 0.3.5 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
 
 ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Python 线性建模接口、自主求解内核和单节点储能教学应用。本次为 **研究开发版**，欢迎下载和交流。本项目基于ChatGPT 6 开发，作者本人也在学习中，欢迎相关专业同好交流
 
@@ -6,13 +6,23 @@ ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Pyt
 
 ## 授权与用途申请 / Licensing and purpose-only requests
 
-自0.3.4（2026-09-08）起正式采用[ZYO非商业测试许可1.0.0](LICENSE)，[范围清单](LICENSE-SCOPE.json)区分受限新增与历史MIT/第三方部分。许可人 **Ziyuan Li** 保留自有或有权授权内容的商业化，包括收费软件、商业许可和API/SaaS。[本版小结](docs/releases/0.3.4.md)。
+自0.3.4（2026-09-08）起正式采用[ZYO非商业测试许可1.0.0](LICENSE)，[范围清单](LICENSE-SCOPE.json)区分受限新增与历史MIT/第三方部分。许可人 **Ziyuan Li** 保留自有或有权授权内容的商业化，包括收费软件、商业许可和API/SaaS。[本版小结](docs/releases/0.3.5.md)。
 
 受限新增内容按账号/申请批准非商业测试，默认90日；商用、生产、再分发和服务另批。历史0.3.3和既有MIT代码仍可依[原MIT](LICENSES/MIT-legacy.txt)使用，无需新测试申请。[授权说明](docs/licensing-and-access.md)和[申请入口](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)只需概括用途，不索取实名、联系方式、单位或证明；公开Issue会显示平台账号及内容，请勿填写隐私。
 
-From0.3.4 (2026-09-08), the formal default is [ZYO Noncommercial Testing License1.0.0](LICENSE), with [scope](LICENSE-SCOPE.json) separating eligible additions from inherited MIT/third-party material. **Ziyuan Li** retains commercialization of owned/authorized material, including paid software, commercial licenses and API/SaaS. See the [release summary](docs/releases/0.3.4.md).
+From0.3.4 (2026-09-08), the formal default is [ZYO Noncommercial Testing License1.0.0](LICENSE), with [scope](LICENSE-SCOPE.json) separating eligible additions from inherited MIT/third-party material. **Ziyuan Li** retains commercialization of owned/authorized material, including paid software, commercial licenses and API/SaaS. See the [release summary](docs/releases/0.3.5.md).
 
 Restricted additions require account/request-approved noncommercial testing, default90 days; commercial/production use, redistribution and services need separate permission. Historical0.3.3 and existing MIT code retain [original rights](LICENSES/MIT-legacy.txt) without a new test application. The guide/form requests only purpose, not identity, contact, affiliation or evidence. Public issues show accounts/content; provide only non-sensitive summaries.
+
+## 原生认证LP增量 / Native certified LP increment
+
+- 交付`Model.solve('native_simplex')`自主LP路径：有界变量稀疏修正单纯形、Phase-I和独立原始—对偶KKT检查。
+- 完成共享动作预算、人工驱除与被拒起点LU计数，复用有序基下标和向量基值更新。
+- Netlib四开发题各三次求解，12/12独立KKT复算通过；[新版本方法与实测](docs/releases/0.3.5.md)，[公式与API教程](docs/native_simplex.md)。
+
+English: delivered the independent certified LP API, shared update budgets, complete successful-LU
+accounting and equivalent basis-update optimization. All12 fresh native Netlib calls pass independent
+KKT audits. See the linked release evidence and analytical API example.
 
 ## 0.3.3 更新 / Updated in 0.3.3
 
@@ -57,7 +67,8 @@ Restricted additions require account/request-approved noncommercial testing, def
 | 路径 | 算法 | 依赖与范围 |
 |---|---|---|
 | `native` | ZYO 自编密集两阶段单纯形＋基础分支定界 | NumPy；有密集表规模保护 |
-| `native_sparse` | ZYO 自编稀疏原始—对偶内点法＋有限盒界＋分支定界 | NumPy、SciPy 稀疏线性代数/SuperLU；变量必须有有限上下界，实验性 |
+| `native_sparse` | ZYO 自编稀疏原始—对偶内点法＋有限盒界＋分支定界 | NumPy/SciPy/SuperLU；非有限域显式人造盒阶梯并回查原域界，活跃人造界拒绝最优，实验性 |
+| `native_simplex` | ZYO 自编有界变量原始稀疏修正单纯形＋独立KKT检查 | NumPy/SciPy/SuperLU基础数值组件；LP专用，逐路径边界与证书单列 |
 | 外部适配器 | HiGHS/Gurobi/COPT | 仅供显式、隔离的独立比较 |
 
 自主路径不调用外部优化引擎，也不自动回退。SciPy 的矩阵/线性方程组件不是优化求解器调用。历史 `lzyopt` 包名为兼容建模与密集内核保留，推荐使用 `import zyo`，也支持 `import ZYO`。
@@ -112,7 +123,7 @@ if r.has_solution:
 
 当前采用分范围的非商业测试许可；历史MIT及第三方声明分别保留，见LICENSE和LICENSE-SCOPE.json。
 
-当前完整研发回归196项、独立非可编辑安装的公开测试74项通过；安装后在源码目录外运行24h稀疏原生及4h密集原生示例均通过独立验收。详细算法范围和实际失败见[能力说明](docs/limitations.md)。
+0.3.0历史安装基线：196项研发回归、74项独立非可编辑安装公开测试通过；安装后在源码目录外运行24h稀疏原生及4h密集原生示例均通过独立验收。当前逐路径范围和实测见[能力说明](docs/limitations.md)与新版本小结。
 
 ---
 
@@ -123,7 +134,8 @@ Version 0.3.0 adds native controlled MPS import, a two-unit 24-hour UC model, in
 ZYO is a locally runnable, editable, general-purpose **research development project** for linear and mixed-integer linear optimization. It includes a Python modeling API, independent algorithms, and single-node storage teaching applications. Downloads and discussion are welcome. The author describes the project as developed with ChatGPT 6, is also learning, and welcomes exchanges with fellow optimization enthusiasts.
 
 - `native`: ZYO's dense two-phase tableau simplex and basic branch-and-bound; requires NumPy and retains a dense-size guard.
-- `native_sparse`: ZYO's experimental sparse primal-dual predictor/corrector method, finite-box bounds and branch-and-bound. It requires explicit finite variable bounds. NumPy and SciPy sparse/SuperLU supply numerical linear algebra, **not optimization engines**.
+- `native_sparse`: ZYO's experimental sparse primal-dual finite-box method and branch-and-bound. Non-finite domains use recorded artificial-box trials with original-domain checks; an active artificial bound invalidates optimality. NumPy/SciPy/SuperLU provide basic numerical operations, not optimization engines.
+- `native_simplex`: ZYO's primal bounded-variable sparse revised simplex for LPs, with independent original-model KKT checks and complete executed-update accounting; see the dedicated guide.
 - Legacy HiGHS/Gurobi/COPT adapters are retained for explicitly selected, isolated comparisons only. External solutions, bases and cuts must not assist the native solver. No silent fallback is performed.
 
 Use the installation commands above with 64-bit Python 3.10+. On Linux/macOS replace `.venv\Scripts\python.exe` with `.venv/bin/python`; those platforms still require direct testing. The directly tested development platform is Windows/Python 3.10.19. Install `-e .` for NumPy-only dense mode, or `-e ".[native-sparse]"` for sparse mode. Initial dependency installation needs network access; subsequent solving can run offline. **This is a GitHub source release, not a PyPI release.**

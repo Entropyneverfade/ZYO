@@ -37,9 +37,14 @@ class DensePivotTests(unittest.TestCase):
 
     def test_full_uc_keeps_primal_feasibility_through_phase_one(self):
         # 不删原始约束、不改成本和容差；旧的近似比值平局会返回NUMERICAL_ERROR。
+        # 时间预算原为 30 秒，实测该模型需要 29.3~30.6 秒（同一模型、同一容差、三次不同预算
+        # 分别为 30.0s TIME_LIMIT / 30.6s OPTIMAL / 29.3s OPTIMAL，见
+        # docs/research/probe_uc_time_budget.py），即恰好压在边界上：机器一有并发负载就会
+        # 翻成 TIME_LIMIT（本轮在 MIPLIB 批次并发时实测到）。这里只放大**时间预算**，
+        # 状态/目标值/可行性/物理检查的断言一字未改，不放宽任何容差。
         case = json.loads((Path(__file__).resolve().parents[1] / 'examples/uc_24h.json').read_text(encoding='utf-8'))
         model, mapping = build_uc_model(case)
-        result = model.solve('native', options=SolveOptions(time_limit=30, mip_gap=0,
+        result = model.solve('native', options=SolveOptions(time_limit=120, mip_gap=0,
             feasibility_tol=1e-7, integrality_tol=1e-7))
         self.assertEqual(result.status.value, 'OPTIMAL', result.termination_reason)
         self.assertAlmostEqual(result.objective, 28625, places=5)

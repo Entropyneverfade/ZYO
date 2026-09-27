@@ -2,9 +2,9 @@
 
 ## 1. 获取和安装
 
-0.3.4受限新增内容安装/运行前，先阅读[LICENSE](../LICENSE)及[范围](../LICENSE-SCOPE.json)，在[用途申请](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)只填用途，获账号/申请批准并接受条款后在期限内测试（默认90日）。仅使用独立历史MIT部分依原许可，无需新申请。商用、生产、再分发及服务另批；API权限独立管理。
+0.3.5受限新增内容安装/运行前，先阅读[LICENSE](../LICENSE)及[范围](../LICENSE-SCOPE.json)，在[用途申请](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)只填用途，获账号/申请批准并接受条款后在期限内测试（默认90日）。仅使用独立历史MIT部分依原许可，无需新申请。商用、生产、再分发及服务另批；API权限独立管理。
 
-Before installing/running restricted0.3.4 additions, read the license/scope, submit only purpose, obtain account/request approval and assent, then test within the term (default90 days). Independent historical MIT portions retain original rights without a new request. Commercial/production use, redistribution and services need separate approval; API rights are separate.
+Before installing/running restricted0.3.5 additions, read the license/scope, submit only purpose, obtain account/request approval and assent, then test within the term (default90 days). Independent historical MIT portions retain original rights without a new request. Commercial/production use, redistribution and services need separate approval; API rights are separate.
 
 从仓库页面选择 **Code → Download ZIP**，解压后进入含 `pyproject.toml` 的目录；或者按 README 使用 Git 克隆。以下命令以 Windows PowerShell 为例：
 
@@ -47,7 +47,18 @@ if r.has_solution:
 m.write('model.json')
 ```
 
-变量边界应来自实际数学/物理模型，稀疏路径要求显式有限上下界。已交付[受控free MPS读取](mps.md)，支持范围和格式检查见专门说明。Bounds should follow the mathematical or physical model; the sparse path requires finite bounds. Controlled free-MPS import is available with the documented feature checks.
+变量边界应来自实际数学/物理模型。`native_sparse`计算核使用有限盒；非有限域的显式人造盒尝试须检查原域证书及人造界活跃情况，截断本身不等价于原模型。已交付[受控free MPS读取](mps.md)。Bounds should follow the real model. The finite-box engine's artificial-domain trials require original-domain checks and active-cap rejection; truncation alone is not equivalent to the original model. Controlled free-MPS import is documented separately.
+
+## 2.1 原生认证LP / Native certified LP
+
+连续LP可显式选择`m.solve('native_simplex', iteration_limit=100)`，使用自研稀疏修正单纯形，
+并读取`r.metadata['certificate']`的原尺度KKT检查和`iteration_budget`。
+自由变量/单边界由认证LP路径精确标准化；`native_sparse`有限盒MILP路径另有边界要求。
+[完整手算例、公式与测试命令](native_simplex.md)；[本版实测](releases/0.3.5.md)。
+
+For continuous LPs, explicitly select `native_simplex` and inspect the original-scale KKT certificate
+and shared executed-update budget. Free/one-sided variables follow exact LP transformations;
+the finite-box MILP engine `native_sparse` has a separate domain contract. See the analytical guide.
 
 ## 3. 不调用优化器的储能教学例
 
