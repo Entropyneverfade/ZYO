@@ -1,5 +1,14 @@
 # 版本记录 / Changelog
 
+## 0.3.6 — 2026-09-28 · 稀疏公共 LP 输入 / Sparse public LP input
+
+- 公共`native_simplex`从原模型直接装配CSC，保留显式稠密参考入口与同一独立KKT门。
+- 1420×1420、1420非零元合成LP经公共原生入口最优；矩阵缓冲区16,131,200→22,724字节（本例709.88×），原始数据及版本图归档。
+- 新增可手算存储量测量脚本、反例测试、双语算例说明和Python回退绘图源码；更新分范围许可清单。
+
+English: the certified public LP API now assembles CSC directly while retaining the explicit dense reference and independent KKT check. A synthetic 1420×1420 diagonal LP solves natively; measured matrix buffers are16,131,200 versus22,724 bytes for this example. Added a reproducible measurement script, tests, bilingual case documentation and a version-specific Python-rendered figure with raw data and scoped license inventory.
+[输入、公式、图及验证 / Inputs, formulation, figure and validation](docs/releases/0.3.6.md)。
+
 ## 0.3.5 — 2026-09-27 · 原生认证LP与单步效率 / Native certified LP and step efficiency
 
 - 交付自主`native_simplex` LP接口、Phase-I、原始—对偶证书和双语手算教程。

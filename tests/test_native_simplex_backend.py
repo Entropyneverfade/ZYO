@@ -132,6 +132,41 @@ class NativeSimplexBackendTests(unittest.TestCase):
         self.assertEqual(list(sparse[5]), list(dense[5]))
         self.assertEqual(sparse[6], dense[6])
 
+    def test_modeling_boundary_preserves_original_row_and_objective_units(self):
+        # 装配属于建模边界；右端项、目标常数与系数都必须在原单位保留。
+        from zyo.modeling.matrix import model_sparse_arrays
+
+        model = Model('matrix_boundary')
+        x = model.add_var('x', lb=-2, ub=4)
+        y = model.add_var('y', lb=0, ub=None)
+        model.add_constr(2*x - 3*y >= -5)
+        model.minimize(7*x + 11)
+        matrix, cost, lower, upper, rhs, sense, constant = model_sparse_arrays(model)
+        self.assertEqual(matrix.shape, (1, 2))
+        self.assertEqual(matrix[0, 0], 2)
+        self.assertEqual(matrix[0, 1], -3)
+        self.assertEqual(cost.tolist(), [7, 0])
+        self.assertEqual(lower.tolist(), [-2, 0])
+        self.assertEqual(upper[0], 4)
+        self.assertTrue(math.isinf(upper[1]))
+        self.assertEqual(rhs.tolist(), [-5])
+        self.assertEqual(sense, ['>='])
+        self.assertEqual(constant, 11)
+
+    def test_public_api_accepts_sparse_lp_above_former_dense_gate(self):
+        # 1420×1420 已超过旧稠密门，但仅 1420 个非零元；原生入口必须按稀疏量装配。
+        model = Model('sparse_public_entry')
+        variables = [model.add_var(f'x{i}', lb=0, ub=1) for i in range(1420)]
+        for variable in variables:
+            model.add_constr(variable <= 1)
+        model.minimize(variables[0])
+        result = model.solve('native_simplex')
+        self.assertEqual(result.status, Status.OPTIMAL, result.termination_reason)
+        self.assertAlmostEqual(result.objective, 0.0)
+        self.assertEqual(result.metadata['model_nonzeros'], 1420)
+        self.assertEqual(result.metadata['matrix_format'], 'csc')
+        self.assertGreaterEqual(result.metadata['assembly_seconds'], 0.0)
+
     def test_status_enum_is_used_not_a_bare_string(self):
         result = build_lp().solve('native_simplex')
         self.assertIsInstance(result.status, Status)
@@ -165,23 +200,50 @@ class NativeSimplexBackendTests(unittest.TestCase):
         self.assertEqual(matrix.shape, (2, 2))
         self.assertEqual(DEFAULT_DENSE_ENTRY_GATE, 2_000_000)
 
-    def test_dense_gate_reports_size_limit_through_the_public_api(self):
-        # 通过公共 API 时必须是 SIZE_LIMIT（可审计），而不是异常或进程被杀。
+    def test_sparse_allocation_failure_reports_size_limit_through_the_public_api(self):
+        # 注入资源失败时仍返回真实状态；公共入口不能静默切换到外部引擎。
         import zyo.solvers.native_simplex as backend
+        import time
 
-        original = backend.model_arrays
+        original = backend.model_sparse_arrays
 
-        def _refuse(model, max_dense_entries=backend.DEFAULT_DENSE_ENTRY_GATE):
-            raise MemoryError('the dense tableau needs 8825835265 entries (70.61 GB)')
+        def _refuse(model):
+            time.sleep(0.01)
+            raise MemoryError('sparse allocation refused')
 
-        backend.model_arrays = _refuse
+        backend.model_sparse_arrays = _refuse
         try:
             result = build_lp().solve('native_simplex')
         finally:
-            backend.model_arrays = original
+            backend.model_sparse_arrays = original
         self.assertEqual(result.status, Status.SIZE_LIMIT, result.termination_reason)
-        self.assertIn('dense tableau', result.termination_reason)
-        self.assertEqual(result.metadata['dense_entry_gate'], backend.DEFAULT_DENSE_ENTRY_GATE)
+        self.assertIn('sparse model assembly failed', result.termination_reason)
+        self.assertEqual(result.metadata['matrix_format'], 'csc')
+        self.assertFalse(result.metadata['fallback_used'])
+        self.assertGreaterEqual(result.metadata['assembly_seconds'], 0.009)
+        self.assertEqual(result.metadata['resource_failure_stage'], 'assembly')
+
+    def test_sparse_solver_allocation_failure_reports_size_limit(self):
+        # 矩阵装配成功后的内部资源失败也必须留状态，不能冒充数值失败或触发外部回退。
+        from unittest.mock import patch
+
+        with patch('zyo.native_lp.solve_certified_lp', side_effect=MemoryError('basis allocation refused')):
+            result = build_lp().solve('native_simplex')
+        self.assertEqual(result.status, Status.SIZE_LIMIT, result.termination_reason)
+        self.assertEqual(result.metadata['model_nonzeros'], 4)
+        self.assertFalse(result.metadata['fallback_used'])
+
+    def test_result_validation_allocation_failure_reports_size_limit(self):
+        # 求解已返回后，原模型独立检查仍可能申请内存；失败必须带阶段和原生状态。
+        from unittest.mock import patch
+
+        with patch('zyo.solvers.native_simplex.validate_candidate',
+                   side_effect=MemoryError('postprocess allocation refused')):
+            result = build_lp().solve('native_simplex')
+        self.assertEqual(result.status, Status.SIZE_LIMIT, result.termination_reason)
+        self.assertEqual(result.metadata['resource_failure_stage'], 'result_processing')
+        self.assertEqual(result.metadata['model_nonzeros'], 4)
+        self.assertFalse(result.metadata['fallback_used'])
 
 
 if __name__ == '__main__':

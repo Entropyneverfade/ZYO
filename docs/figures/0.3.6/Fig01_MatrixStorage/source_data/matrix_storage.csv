@@ -1,0 +1,5 @@
+rows,dense_bytes,csc_bytes,nonzeros,matrices_equal
+200,320000,3204,200,True
+600,2880000,9604,600,True
+1000,8000000,16004,1000,True
+1420,16131200,22724,1420,True

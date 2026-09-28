@@ -54,16 +54,17 @@ reporting OPTIMAL. The analytical optimum is $(3,1)$ with objective $-5$.
   资源限制退出保留真实状态；多解不要求轨迹相同。
 - 此路径仅LP；MILP使用现有`native`或有限盒`native_sparse`明确选择。对偶修正单纯形、
   大规模困难整数搜索和所有公开题覆盖分别有后续验证门。
-- 公开模型适配器目前仍先装配稠密输入，预登记`约束数×变量数≤2,000,000`的分配门；
-  超门返回`SIZE_LIMIT`并记录规模，不自动换引擎。底层稀疏Phase-I大题实验不等于公开接口的大题验收。
+- 0.3.6公共模型适配器按CSC装配输入，`metadata.matrix_format='csc'`、`model_nonzeros`和
+  `assembly_seconds`可用于追踪表示与装配成本；显式稠密参考入口仍保留2,000,000元素分配门。
+  1420阶对角教学LP已通过公共入口，但底层稀疏Phase-I大题实验不等于通用大题验收。
 
 English: all three stages share one executed-update budget. Successful factorisations include
 rejected starts and artificial cleanup. Real stopping states, engine identity and independent
 certificates accompany results. This backend is LP-only; native MILP paths are separately selected
 and validated. Dual revised simplex and broad industrial-scale coverage remain distinct milestones.
-The public model adapter currently assembles dense input and gates allocations at2,000,000 row-column
-entries. Larger input returns SIZE_LIMIT with size metadata. A large lower-level sparse Phase-I
-experiment is distinct from acceptance through this public adapter.
+Since0.3.6 the public adapter assembles CSC input and reports format, nonzeros and assembly time.
+The explicit dense reference still gates allocations at2,000,000 row-column entries. A solved
+1420-dimensional diagonal tutorial is distinct from broad large-scale LP acceptance.
 
 本地Python求解不需要API密钥；受限新增内容的使用许可仍按用途申请管理。
 未来远程API授权与本地源码许可分别管理，不会将第三方引擎或公网服务作为原生计算的依赖。

@@ -10,7 +10,7 @@
 
 原生计算不调用外部优化器，无静默回退。NumPy/SciPy/SuperLU用于基础数值运算。
 可行性本身不证明最优；限制状态、大题失败和不同模型范围分别保存。
-[认证LP教程](native_simplex.md)及[0.3.5实测](releases/0.3.5.md)提供当前方法、证据与复现入口。
+[认证LP教程](native_simplex.md)、[0.3.5算法实测](releases/0.3.5.md)及[0.3.6稀疏输入验收](releases/0.3.6.md)提供当前方法、证据与复现入口。
 
 English: the primal sparse revised-simplex LP engine, finite-box interior-point MILP engine and dense
 MILP engine have separate validation scopes. Netlib4×3 independently passes on the certified LP path;

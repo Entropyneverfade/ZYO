@@ -1,0 +1,52 @@
+{
+  "kind": "synthetic diagonal LP matrix storage, not solver speed",
+  "numpy": "2.2.6",
+  "scipy": "1.15.3",
+  "forbidden_modules_loaded": [],
+  "rows": [
+    {
+      "rows": 200,
+      "columns": 200,
+      "nonzeros": 200,
+      "dense_bytes": 320000,
+      "csc_bytes": 3204,
+      "matrices_equal": true,
+      "model_definition": "min x0; 0<=xi<=1; xi<=1 for every i; dimensionless"
+    },
+    {
+      "rows": 600,
+      "columns": 600,
+      "nonzeros": 600,
+      "dense_bytes": 2880000,
+      "csc_bytes": 9604,
+      "matrices_equal": true,
+      "model_definition": "min x0; 0<=xi<=1; xi<=1 for every i; dimensionless"
+    },
+    {
+      "rows": 1000,
+      "columns": 1000,
+      "nonzeros": 1000,
+      "dense_bytes": 8000000,
+      "csc_bytes": 16004,
+      "matrices_equal": true,
+      "model_definition": "min x0; 0<=xi<=1; xi<=1 for every i; dimensionless"
+    },
+    {
+      "rows": 1420,
+      "columns": 1420,
+      "nonzeros": 1420,
+      "dense_bytes": 16131200,
+      "csc_bytes": 22724,
+      "matrices_equal": true,
+      "model_definition": "min x0; 0<=xi<=1; xi<=1 for every i; dimensionless",
+      "status": "OPTIMAL",
+      "objective": 0.0,
+      "certificate_verified": true,
+      "fallback_used": false,
+      "solver_name": "native_simplex",
+      "solver_version": "0.3.6",
+      "solve_seconds": 0.020153500023297966,
+      "assembly_seconds": 0.000895200006198138
+    }
+  ]
+}

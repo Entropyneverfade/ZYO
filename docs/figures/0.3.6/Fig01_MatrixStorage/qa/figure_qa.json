@@ -1,0 +1,21 @@
+{
+  "renderer": "Python / matplotlib",
+  "fallback_reason": "Origin 2025b COM export had an unremovable demo watermark; the user has not provided a full Origin export license.",
+  "data_check": "PASS",
+  "export_check": "PASS",
+  "visual_review": "PASS: 600 dpi PNG visually inspected; labels, four points and 0-800 ratio scale are legible; no watermark or clipping.",
+  "source_sha256": "ca965cdfc43d35973b07a1d1cc3ef2190e2b389bf4a92f6c3199d504355be8d2",
+  "sizes": [
+    200,
+    600,
+    1000,
+    1420
+  ],
+  "dense_to_csc_ratios": [
+    99.87515605493134,
+    299.875052061641,
+    499.87503124218944,
+    709.8750220031685
+  ],
+  "claim": "Matrix buffer bytes only: NumPy dense nbytes divided by CSC data+indices+indptr bytes. Not solver time or process RSS."
+}

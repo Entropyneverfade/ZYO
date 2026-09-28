@@ -1,4 +1,4 @@
-# ZYO 0.3.5 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
+# ZYO 0.3.6 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
 
 ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Python 线性建模接口、自主求解内核和单节点储能教学应用。本次为 **研究开发版**，欢迎下载和交流。本项目基于ChatGPT 6 开发，作者本人也在学习中，欢迎相关专业同好交流
 
@@ -6,11 +6,17 @@ ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Pyt
 
 ## 授权与用途申请 / Licensing and purpose-only requests
 
-自0.3.4（2026-09-08）起正式采用[ZYO非商业测试许可1.0.0](LICENSE)，[范围清单](LICENSE-SCOPE.json)区分受限新增与历史MIT/第三方部分。许可人 **Ziyuan Li** 保留自有或有权授权内容的商业化，包括收费软件、商业许可和API/SaaS。[本版小结](docs/releases/0.3.5.md)。
+自0.3.4（2026-09-08）起正式采用[ZYO非商业测试许可1.0.0](LICENSE)，[范围清单](LICENSE-SCOPE.json)区分受限新增与历史MIT/第三方部分。许可人 **Ziyuan Li** 保留自有或有权授权内容的商业化，包括收费软件、商业许可和API/SaaS。[本版小结](docs/releases/0.3.6.md)。
 
 受限新增内容按账号/申请批准非商业测试，默认90日；商用、生产、再分发和服务另批。历史0.3.3和既有MIT代码仍可依[原MIT](LICENSES/MIT-legacy.txt)使用，无需新测试申请。[授权说明](docs/licensing-and-access.md)和[申请入口](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)只需概括用途，不索取实名、联系方式、单位或证明；公开Issue会显示平台账号及内容，请勿填写隐私。
 
-From0.3.4 (2026-09-08), the formal default is [ZYO Noncommercial Testing License1.0.0](LICENSE), with [scope](LICENSE-SCOPE.json) separating eligible additions from inherited MIT/third-party material. **Ziyuan Li** retains commercialization of owned/authorized material, including paid software, commercial licenses and API/SaaS. See the [release summary](docs/releases/0.3.5.md).
+From0.3.4 (2026-09-08), the formal default is [ZYO Noncommercial Testing License1.0.0](LICENSE), with [scope](LICENSE-SCOPE.json) separating eligible additions from inherited MIT/third-party material. **Ziyuan Li** retains commercialization of owned/authorized material, including paid software, commercial licenses and API/SaaS. See the [release summary](docs/releases/0.3.6.md).
+
+## 0.3.6 稀疏公共 LP 输入 / Sparse public LP input
+
+`Model.solve('native_simplex')`现直接按 CSC 稀疏矩阵装配用户 LP，并在结果中记录装配耗时与矩阵规模。1420×1420、1420非零元的可手算对角 LP 经自主入口得到最优且独立KKT通过。[本版图与数据](docs/releases/0.3.6.md)展示同矩阵的实际稠密/CSC缓冲区字节比；图由Python绘制，源表和脚本随版保存。
+
+The public certified LP path now assembles directly to CSC and records assembly time and matrix size. A hand-checkable 1420×1420 diagonal LP solves with an independent KKT certificate. The [release-specific figure and raw data](docs/releases/0.3.6.md) compare matrix-buffer bytes; the declared renderer is Python.
 
 Restricted additions require account/request-approved noncommercial testing, default90 days; commercial/production use, redistribution and services need separate permission. Historical0.3.3 and existing MIT code retain [original rights](LICENSES/MIT-legacy.txt) without a new test application. The guide/form requests only purpose, not identity, contact, affiliation or evidence. Public issues show accounts/content; provide only non-sensitive summaries.
 

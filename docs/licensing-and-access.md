@@ -1,6 +1,6 @@
 # ZYO 授权与用途申请 / Licensing and purpose-only requests
 
-2026-09-27 · 软件0.3.5 / Software0.3.5 · 正式条款1.0.0 / Formal terms1.0.0
+2026-09-28 · 软件0.3.6 / Software0.3.6 · 正式条款1.0.0 / Formal terms1.0.0
 
 ## 正式许可 / Formal license
 
@@ -40,7 +40,7 @@ Ziyuan Li retains commercial licensing, software/subscription sales, integration
 
 Historical0.3.3 and earlier MIT material, including existing solver kernels, retains the original MIT without a new application. The baseline records104 prior public file identities. New terms cover eligible new expression only and do not prohibit use of old code under MIT; third-party rights remain. The package's “new license AND MIT” identifies respective component terms, not an MIT alternative for restricted additions or extra restrictions on old MIT.
 
-成果和负面评价可按获批用途发表，需保留合理版本/引擎/数据来源说明。许可人不因运行或反馈取得他人输入、输出、修改版权。参见[正式条款](../LICENSE)、[第三方说明](../THIRD_PARTY.md)、[贡献规则](../CONTRIBUTING.md)及[本版更新](releases/0.3.5.md)。
+成果和负面评价可按获批用途发表，需保留合理版本/引擎/数据来源说明。许可人不因运行或反馈取得他人输入、输出、修改版权。参见[正式条款](../LICENSE)、[第三方说明](../THIRD_PARTY.md)、[贡献规则](../CONTRIBUTING.md)及[本版更新](releases/0.3.6.md)。
 
 Results and negative evaluations may be published for approved purposes with reasonable version/engine/source attribution. Execution or feedback does not assign others' inputs, outputs or modifications. Consult the formal terms, third-party notices, contribution rules and release summary.
 
