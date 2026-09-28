@@ -1,0 +1,3 @@
+# 本版图源表、QA与绘图脚本固定LF；Windows检出不得改变图源SHA-256。
+docs/public/figures/0.3.6/Fig01_MatrixStorage/** -text
+docs/figures/0.3.6/Fig01_MatrixStorage/** -text

@@ -19,6 +19,7 @@
   "scope_rule_zh": "原基线内容及其MIT/第三方权利保留。下列路径中相对基线的新创且可获版权保护、许可人自有或有权授权的表达适用新许可；事实、版本数字和不需许可的使用不因此受到独占。未变的求解内核继承MIT。后续新增内容须更新登记并核对来源，不自动吞并第三方权利。",
   "scope_rule_en": "Baseline content and its MIT/third-party rights remain preserved. Only new copyrightable expression in the listed paths relative to the baseline, owned or authorized by the licensor, follows the new license. Facts, version numbers and uses not requiring permission are not monopolized. Unchanged solver kernels retain MIT. Later additions require updated registration and provenance review, not automatic incorporation of third-party rights.",
   "covered_public_paths": [
+    ".gitattributes",
     "MANIFEST.in",
     "LICENSE",
     "LICENSE-SCOPE.json",
