@@ -22,7 +22,7 @@ ZYO 稀疏原生三次均返回 OPTIMAL 并通过独立原始约束、整数、�
 
 ## 统一资源与验收口径 / Protocol
 
-- 同机 Windows、AMD Ryzen 9 9950X（16核32逻辑处理器），Python3.10.19、NumPy2.2.6、SciPy1.15.3。实际比较每进程请求1线程，数值库线程环境均1；完整结果单列各引擎实际接受及未映射参数。
+- 全部引擎在同一 Windows 测试主机运行；Python3.10.19、NumPy2.2.6、SciPy1.15.3。每进程请求1线程，数值库线程环境均1；完整结果单列各引擎实际接受及未映射参数。
 - 每路径3个新进程，随机顺序种子20260908；无预热，冷 `model.solve` 调用计时与包含启动、导入、检查的监督进程墙钟分开保存。
 - 请求求解30s、监督60s、4GiB；节点10000、迭代100000；可行性/整数容差1e-7、目标参数1e-8、请求mip_gap0。实际接受门另以原始候选、独立物理/成本和归一化界差检查；浮点Gap并非精确零。
 - 成本比较与已知28625一致；Gap定义为 `abs(objective-bound)/max(1,abs(objective))`。ENS与约束可行性分开。失败计时保留、缺失值不记零；RSS为0.1秒间隔的进程树采样峰值，可能漏掉短峰。
@@ -32,6 +32,6 @@ ZYO 稀疏原生三次均返回 OPTIMAL 并通过独立原始约束、整数、�
 
 The synthetic fixture has24 hourly periods, two units,264 variables,48 binaries,480 constraints and1537 nonzeros. All three attempts of each native engine pass the independent gates. Dense native reaches cost28625 with25 nodes/26272 iterations; sparse native uses21 nodes/222 iterations. Its objective/bound/residuals are listed above. ENS is zero. The three isolated references obtain28625. Resource colors and hatches identify thermal, wind, solar and ENS, with a separate demand line.
 
-Measurements use the same Windows/Ryzen 9 9950X host, Python 3.10.19, NumPy 2.2.6 and SciPy 1.15.3. Three fresh processes per engine run in seeded randomized order with one requested thread, 30-second solve / 60-second process budgets and 4 GiB RSS supervision. No warmup is used. Solve-call time and complete process wall time are separate; RSS samples are taken every 0.1 seconds. Failures stay in the table. Requested feasibility/integer tolerances are 1e-7 and mip_gap is zero; returned floating-point gaps are checked explicitly using the stated formula, not rounded into exact proof.
+Measurements use one Windows test host, Python 3.10.19, NumPy 2.2.6 and SciPy 1.15.3. Three fresh processes per engine run in seeded randomized order with one requested thread, 30-second solve / 60-second process budgets and 4 GiB RSS supervision. No warmup is used. Solve-call time and complete process wall time are separate; RSS samples are taken every 0.1 seconds. Failures stay in the table. Requested feasibility/integer tolerances are 1e-7 and mip_gap is zero; returned floating-point gaps are checked explicitly using the stated formula, not rounded into exact proof.
 
 Every engine receives the identical frozen unsolved model. External results never enter the native computation. The sparse-native call is roughly75× Gurobi on this fixture only, not a general ratio or global rank. Network SCUC, annual UC and probabilistic adequacy have separate milestones. Use the tutorial to reproduce the native example and measure your own runtime.

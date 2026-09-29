@@ -1,7 +1,12 @@
 {
   "schema": "zyo-public-files-1",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 193,
+      "sha256": "d12e5c014280a704b180ea2ac1696deed575e2b2b6ad6dfe0c090f01056ebd62"
+    },
     {
       "path": ".github/ISSUE_TEMPLATE/zyo-test.yml",
       "bytes": 1609,
@@ -14,8 +19,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 17937,
-      "sha256": "4ec2757c3860601e1b2df8fa9e31ef03df89c0363f16519644da4dc35c629c3c"
+      "bytes": 19454,
+      "sha256": "ad6c081c9742d8a78e213425890b7648347ff1b2009491fbd04094d768886453"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -29,8 +34,8 @@
     },
     {
       "path": "LICENSE-SCOPE.json",
-      "bytes": 5127,
-      "sha256": "40433aefb9f4bf2608bcb5f676775adea007a075796313a0637ec9fa651b1e54"
+      "bytes": 5827,
+      "sha256": "82becc22e2082aefec7189a58898c92636ac03ba6f9991e849101cbc0a0e054e"
     },
     {
       "path": "LICENSES/MIT-BASELINE.json",
@@ -44,13 +49,13 @@
     },
     {
       "path": "MANIFEST.in",
-      "bytes": 740,
-      "sha256": "d32287ba49ed7c4dd0e2c54d065f10552dbb84932fa5d94535924d338c1d51b6"
+      "bytes": 876,
+      "sha256": "04c10c2ce86b61497771293c30ddf38cd6fbf3e90ca0ee07c9d48ac1809a43c1"
     },
     {
       "path": "README.md",
-      "bytes": 13883,
-      "sha256": "f3789dd4d3a76468959b32baa2e590570f91b779b2dee96570ac58603304a4bb"
+      "bytes": 14634,
+      "sha256": "320b31d7dabe28cea125d39aaed28eb4af198c2b2bc8a8ece15493a5fa8b0025"
     },
     {
       "path": "THIRD_PARTY.md",
@@ -65,7 +70,7 @@
     {
       "path": "_zyo_version.py",
       "bytes": 178,
-      "sha256": "38556b2340be9a81393cd79c98d0ac1d078e69d880281d63f01828537dfaf049"
+      "sha256": "ceed9cfeb6f2dbe89e0d713f217b11cf2f7acdca664f633cbd209029e26e90fe"
     },
     {
       "path": "docs/API-TERMS.md",
@@ -133,6 +138,31 @@
       "sha256": "ebc834c0578aeb5894c860578cf6a4962faf98296bc012c42f23419a590af8ed"
     },
     {
+      "path": "docs/figures/0.3.6/Fig01_MatrixStorage/images/Fig01_MatrixStorage.svg",
+      "bytes": 8126,
+      "sha256": "f0a6224fd7a13202179db01ee4a62febd8ea248c14203cbe93e30a0be74353f4"
+    },
+    {
+      "path": "docs/figures/0.3.6/Fig01_MatrixStorage/qa/figure_qa.json",
+      "bytes": 748,
+      "sha256": "ea355584ad0a1302ce89171dae928ab3effcbaed2999d36ee9bd13d59e1262d0"
+    },
+    {
+      "path": "docs/figures/0.3.6/Fig01_MatrixStorage/scripts/plot_python.py",
+      "bytes": 4050,
+      "sha256": "012810b93424291acfff2d3d4a3c9508209f718a1375830d2856f661624cb2c8"
+    },
+    {
+      "path": "docs/figures/0.3.6/Fig01_MatrixStorage/source_data/matrix_storage.csv",
+      "bytes": 161,
+      "sha256": "ca965cdfc43d35973b07a1d1cc3ef2190e2b389bf4a92f6c3199d504355be8d2"
+    },
+    {
+      "path": "docs/figures/0.3.6/Fig01_MatrixStorage/source_data/measurements.json",
+      "bytes": 1415,
+      "sha256": "aea3e3d5014df40bdabb25ba9ee7bb4c06c9fcef26562eaf19646c60884661ef"
+    },
+    {
       "path": "docs/figures/uc_comparison.csv",
       "bytes": 365,
       "sha256": "c0c5588f5682ada6df00f408b515a1e5d5cef661d7bfe6aa0fd206fbced77dbe"
@@ -149,18 +179,18 @@
     },
     {
       "path": "docs/implementation_languages.md",
-      "bytes": 2737,
-      "sha256": "84a2c8d553bae472823110ea430cadb1cb686506c320d54701f28fc114021857"
+      "bytes": 1868,
+      "sha256": "fc4637bc3949d9a43a1e15641f7b5adb200de5f4e8afd00469efb421e836e37e"
     },
     {
       "path": "docs/licensing-and-access.md",
       "bytes": 6658,
-      "sha256": "b7562466fdd928fef041f0bccd71e20f55671bc18555989321e0b798e40fc849"
+      "sha256": "2abc99ca6b9e10f950783ac8834d4a1325bf7c42f13b9446cd15fe1efd634962"
     },
     {
       "path": "docs/limitations.md",
-      "bytes": 8677,
-      "sha256": "eb5800c4432587ed006df12fdacbcc679d748cdfec34bf9ab50f4d4dc9308721"
+      "bytes": 8730,
+      "sha256": "95e4c2647221c16e36d7c05554aa2a60cb9cc204f305493fd618225d67b2890f"
     },
     {
       "path": "docs/mps.md",
@@ -169,13 +199,13 @@
     },
     {
       "path": "docs/native_simplex.md",
-      "bytes": 4897,
-      "sha256": "8f6cabbff7973b6853f18af23aa3fedb2589f3925a418ff14ac4b5a141eb752c"
+      "bytes": 4991,
+      "sha256": "0e4bb3c017a87cbba0668ff20d9a2a601f11a66394005b62456e7b31fe8bf4df"
     },
     {
       "path": "docs/quickstart_zh.md",
-      "bytes": 8410,
-      "sha256": "0ea146d0556528a684d6181adfb6e4b7db530ee72b4436236fedb7eec0d16a05"
+      "bytes": 8431,
+      "sha256": "c49bd1167238fbdfedfcaba7b7be85047915dd7dee2a8ccfda1fa48ecb2154d7"
     },
     {
       "path": "docs/releases/0.3.3.md",
@@ -189,8 +219,13 @@
     },
     {
       "path": "docs/releases/0.3.5.md",
-      "bytes": 5926,
-      "sha256": "bcd22ea777ffe8cadf6769e537f4d9c5eb15c0873b167c7ce567c36cedc03bf9"
+      "bytes": 5885,
+      "sha256": "fd4e19a53a7f8971f504f6c0ab01e5583e027e26bd7254244529281b6ec0bf9f"
+    },
+    {
+      "path": "docs/releases/0.3.6.md",
+      "bytes": 7158,
+      "sha256": "4cd376b17a4f1d62c4c0ea2884ed89f20a18b315218857b50a122e8665af2f24"
     },
     {
       "path": "docs/sparse_reuse.md",
@@ -199,8 +234,8 @@
     },
     {
       "path": "docs/uc_results.md",
-      "bytes": 4352,
-      "sha256": "9d54d5557430671b2a4b39fb3aacc951a2c6e34f366a2836d0155bc2d9cef005"
+      "bytes": 4312,
+      "sha256": "3c0562b1f441c6d216413ec1d8cf72586b2c2e21497c3450194436880d86946f"
     },
     {
       "path": "docs/unit_commitment.md",
@@ -255,7 +290,7 @@
     {
       "path": "pyproject.toml",
       "bytes": 909,
-      "sha256": "f09fce04276ef6591be9efeaed53bc31644cca8fc71faa44faed7a50096b9ade"
+      "sha256": "62c3b965eee5479476ab87aec4047b5f1349b091320a8486ae5a03b95ad48352"
     },
     {
       "path": "tests/data/native_sparse_60.json",
@@ -309,8 +344,8 @@
     },
     {
       "path": "tests/test_native_simplex_backend.py",
-      "bytes": 8623,
-      "sha256": "0bea5b9ebcdff7e258eab4bc8da16d621b65d222d867fd08d25292de84bf176b"
+      "bytes": 11962,
+      "sha256": "60356960ef592cc0dcb63ff4ff7669de98aec861d81582cf2034e20d4d149743"
     },
     {
       "path": "tests/test_native_sparse.py",
@@ -326,6 +361,11 @@
       "path": "tests/test_power_palette.py",
       "bytes": 868,
       "sha256": "f877e74d77118b16006bb37b35012b6fd04243524d2733d5cf3460f274c6566b"
+    },
+    {
+      "path": "tests/test_public_lp_input_measure.py",
+      "bytes": 5328,
+      "sha256": "b77126560e3ba58a39b6dce0fcd3b858f47469a4922bd9689e4e5bab0e202b5d"
     },
     {
       "path": "tests/test_simplex_budget.py",
@@ -420,7 +460,7 @@
     {
       "path": "tests/test_zyo_imports.py",
       "bytes": 1103,
-      "sha256": "80f0a55b38986ad420db76a3eac099bc6ba636651d45c7354b12068381665c41"
+      "sha256": "1659b027f57496d7344e2e43a261dcc38d1b0f3647a2f7ba46d7bc8d1c56decc"
     },
     {
       "path": "tests/test_zyo_modeling.py",
@@ -431,6 +471,11 @@
       "path": "tests/test_zyo_results.py",
       "bytes": 2639,
       "sha256": "74aba42629863cdce6909217c757788b75929fae66fdafa36b1ec62119a2a638"
+    },
+    {
+      "path": "tools/measure_public_lp_input.py",
+      "bytes": 4580,
+      "sha256": "fd5625c4cdff29c7e1797bcfd842a78eb048dfee5012525f3994612a525c968b"
     },
     {
       "path": "zyo/__init__.py",
@@ -498,6 +543,16 @@
       "sha256": "201297cf301954e086115a31f2f52a12c1b81aaecb5c87ff09e1743627a973a8"
     },
     {
+      "path": "zyo/modeling/__init__.py",
+      "bytes": 261,
+      "sha256": "7971ba853f308283877d3a611d8f6a762667b09210c034046d20497b93465eab"
+    },
+    {
+      "path": "zyo/modeling/matrix.py",
+      "bytes": 2913,
+      "sha256": "d5c70aa116cab8bc4610d3125ab3f747da09bae2228c66ce1623ce0941fc2e4d"
+    },
+    {
       "path": "zyo/mps.py",
       "bytes": 9507,
       "sha256": "046a54a1b8a464d91c4781c6b57dfbbc84e9e392b80b06b08ac7cee7154494f9"
@@ -559,8 +614,8 @@
     },
     {
       "path": "zyo/solvers/native_simplex.py",
-      "bytes": 13642,
-      "sha256": "f7c8f435a9793aaa2a43cea61d51351008735103580785f9aa279e7f2a3de019"
+      "bytes": 11481,
+      "sha256": "c5049de7d849e02f0852848c6fdc652877814d70a8afc1a34add035b0edb128b"
     },
     {
       "path": "zyo/solvers/native_sparse.py",

@@ -1,4 +1,4 @@
-# 本图实际后端：Origin 2025b 导出带 demo 水印，按用户许可使用 Python 回退。
+# 本图实际后端：Origin 试绘导出带 demo 水印，使用 Python 回退。
 # 仅依据同目录实测 CSV 绘制，不重算、平滑或调整求解结果。
 """依据本版本实测 CSV，用 matplotlib 重绘矩阵缓冲区字节比。"""
 
@@ -69,7 +69,7 @@ def main(argv=None):
     qa = output/'qa'
     qa.mkdir(exist_ok=False)
     report = {'renderer': 'Python / matplotlib',
-              'fallback_reason': 'Origin 2025b COM export had an unremovable demo watermark; the user has not provided a full Origin export license.',
+              'fallback_reason': 'The attempted Origin export had a demo watermark; the published renderer is Python/matplotlib.',
               'data_check': 'PASS', 'export_check': 'PASS', 'visual_review': 'PENDING',
               'source_sha256': hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
               'sizes': sizes, 'dense_to_csc_ratios': ratios,

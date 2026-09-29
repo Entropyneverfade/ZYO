@@ -1,5 +1,14 @@
 # 版本记录 / Changelog
 
+## 0.3.6 文本修订 — 2026-09-29 / Report revision
+
+公开小结与结果说明采用匿名化测试环境表述，保留模型、资源预算、版本和实测指标；
+版本图及原始计算数据维持原版本归属。
+
+The public summaries and result notes now use an anonymized test-environment description
+while retaining model definitions, resource budgets, dependency versions and measured results.
+The versioned figure and original computation data retain their release identity.
+
 ## 0.3.6 — 2026-09-28 · 稀疏公共 LP 输入 / Sparse public LP input
 
 - 公共`native_simplex`从原模型直接装配CSC，保留显式稠密参考入口与同一独立KKT门。
