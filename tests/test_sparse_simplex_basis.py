@@ -1,8 +1,10 @@
 # 稀疏基维护的独立验收：FTRAN/BTRAN 与乘积形式更新必须与稠密直接解一致。
 # 预期全部由 numpy 稠密解或手算给出，不调用被测模块的分解/更新函数。
 import unittest
+from unittest.mock import patch
 
 import numpy as np
+from scipy.linalg.blas import daxpy as reference_daxpy
 from scipy.sparse import csc_matrix
 
 from zyo.errors import NumericalError
@@ -74,6 +76,95 @@ class SparseBasisTests(unittest.TestCase):
                                    rtol=1e-9, atol=1e-11)
         np.testing.assert_allclose(self.basis.btran(rhs), np.linalg.solve(square.T, rhs),
                                    rtol=1e-9, atol=1e-11)
+
+    def test_large_eta_pivot_does_not_cancel_the_pivot_coordinate(self):
+        # B0=[1] 换入 [1e12] 后，B1=[1e12]；直接除法给 FTRAN(1e12)=1。
+        # 若先算 gamma≈1 再做 1e12-gamma*1e12，会丢失约 5e-10 的解精度，
+        # 放回原方程就产生约 500 的绝对残差。
+        matrix = dense_matrix([[1., 1e12]])
+        basis = SparseBasis(matrix, [0])
+        direction = basis.ftran(matrix[:, 1].toarray().ravel())
+        basis.update(0, direction, 1, 0)
+        primal = basis.ftran(np.array([1e12]))
+        dual = basis.btran(np.array([-1.]))
+        self.assertLessEqual(abs(primal[0]-1.), 1e-12)
+        self.assertLessEqual(abs(float((matrix[:, basis.basic] @ primal)[0])-1e12), 1e-7)
+        self.assertLessEqual(abs(dual[0]+1e-12), 1e-20)
+
+    def test_product_form_ftran_uses_inplace_axpy_and_dense_reference(self):
+        # 单个 eta 更新仍使用 BLAS DAXPY 处理非主元，并与稠密直接解一致。
+        entering = 4
+        column = self.basis.ftran(self.matrix[:, entering].toarray().ravel())
+        self.basis.update(0, column, entering, 0)
+        rhs = np.array([2., -1., 0.5, 4.])
+        square = np.array(A_ROWS)[:, self.basis.basic]
+        with patch('zyo.sparse_simplex.daxpy', wraps=reference_daxpy) as axpy:
+            actual = self.basis.ftran(rhs)
+        self.assertGreaterEqual(axpy.call_count, 1)
+        np.testing.assert_allclose(actual, np.linalg.solve(square, rhs),
+                                   rtol=1e-9, atol=1e-11)
+
+    def test_cached_basis_indices_follow_every_pivot_and_rebuild(self):
+        # 大规模稀疏切列反复解析 Python 列表会耗时；索引缓存必须与真实基同步，
+        # 否则残差门检查的是旧基，即使回代看似正常也不能视作正确解。
+        np.testing.assert_array_equal(self.basis._basic_indices, [0, 1, 2, 3])
+        for position, entering in ((0, 4), (2, 5)):
+            leaving = self.basis.basic[position]
+            column = self.basis.ftran(self.matrix[:, entering].toarray().ravel())
+            self.basis.update(position, column, entering, leaving)
+            np.testing.assert_array_equal(self.basis._basic_indices, self.basis.basic)
+            np.testing.assert_array_equal(self.basis.assemble().toarray(),
+                                          np.array(A_ROWS)[:, self.basis.basic])
+        self.basis.refactorise()
+        np.testing.assert_array_equal(self.basis._basic_indices, self.basis.basic)
+        rhs = np.array([1., -2., 3., 0.5])
+        expected = np.linalg.solve(np.array(A_ROWS)[:, self.basis.basic].T, rhs)
+        np.testing.assert_allclose(self.basis.btran(rhs), expected, rtol=1e-10, atol=1e-12)
+
+    def test_residual_operator_reuses_current_basis_until_pivot(self):
+        # 先验证红灯：同一基上的 FTRAN/BTRAN 不应为残差复核重复切列；
+        # 换基后首个复核必须切取新基，随后再次复用，重分解亦须刷新。
+        rhs = np.array([1., -2., 3., 0.5])
+        with patch.object(self.basis, 'assemble', wraps=self.basis.assemble) as assemble:
+            np.testing.assert_allclose(self.basis.ftran(rhs), rhs)
+            np.testing.assert_allclose(self.basis.btran(rhs), rhs)
+            self.assertEqual(assemble.call_count, 0)
+            entering = 4
+            column = self.basis.ftran(self.matrix[:, entering].toarray().ravel())
+            self.basis.update(0, column, entering, 0)
+            square = np.array(A_ROWS)[:, self.basis.basic]
+            np.testing.assert_allclose(self.basis.ftran(rhs), np.linalg.solve(square, rhs),
+                                       rtol=1e-9, atol=1e-11)
+            np.testing.assert_allclose(self.basis.btran(rhs), np.linalg.solve(square.T, rhs),
+                                       rtol=1e-9, atol=1e-11)
+            self.assertEqual(assemble.call_count, 1)
+            self.basis.refactorise()
+            self.assertEqual(assemble.call_count, 2)
+            np.testing.assert_allclose(self.basis.btran(rhs), np.linalg.solve(square.T, rhs),
+                                       rtol=1e-9, atol=1e-11)
+            self.assertEqual(assemble.call_count, 2)
+
+    def test_absolute_residual_operator_is_cached_only_for_current_basis(self):
+        # LAPACK 后向误差分母需要 |B|；同一基上的正反回代复用，换基则必须失效。
+        rhs = np.array([1., -2., 3., 0.5])
+        initial = self.basis._residual_abs_basis_matrix
+        np.testing.assert_allclose(initial.toarray(), np.eye(4))
+        self.basis.ftran(rhs)
+        self.basis.btran(rhs)
+        self.assertIs(self.basis._residual_abs_basis_matrix, initial)
+        entering = 4
+        column = self.basis.ftran(self.matrix[:, entering].toarray().ravel())
+        self.basis.update(0, column, entering, 0)
+        self.assertIsNone(self.basis._residual_abs_basis_matrix)
+        square = np.array(A_ROWS)[:, self.basis.basic]
+        np.testing.assert_allclose(self.basis.ftran(rhs), np.linalg.solve(square, rhs), atol=1e-10)
+        np.testing.assert_allclose(self.basis.btran(rhs), np.linalg.solve(square.T, rhs), atol=1e-10)
+        refreshed = self.basis._residual_abs_basis_matrix
+        self.assertIsNot(refreshed, initial)
+        np.testing.assert_allclose(refreshed.toarray(), np.abs(square))
+        self.basis.refactorise()
+        self.assertIsNot(self.basis._residual_abs_basis_matrix, refreshed)
+        np.testing.assert_allclose(self.basis._residual_abs_basis_matrix.toarray(), np.abs(square))
 
     def test_repeated_updates_stay_consistent_without_refactorisation(self):
         # 连续 6 次枢轴，更新链全程不重分解；每次都与当前基的稠密解比较。

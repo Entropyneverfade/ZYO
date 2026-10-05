@@ -208,7 +208,10 @@ class NativeSimplexBackendTests(unittest.TestCase):
         original = backend.model_sparse_arrays
 
         def _refuse(model):
-            time.sleep(0.01)
+            # Windows 的 sleep(0.01) 可能提前返回；用同一单调时钟保证装配计时门的下界。
+            deadline = time.perf_counter() + 0.012
+            while time.perf_counter() < deadline:
+                pass
             raise MemoryError('sparse allocation refused')
 
         backend.model_sparse_arrays = _refuse

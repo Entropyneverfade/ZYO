@@ -1,4 +1,4 @@
-# ZYO 0.3.6 · 自主 LP/MILP 研究求解器 / Independent LP/MILP research solver
+# ZYO 0.3.7 本地发布候选 · 自主 LP/MILP 研究求解器 / Local release candidate · Independent LP/MILP research solver
 
 ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Python 线性建模接口、自主求解内核和单节点储能教学应用。本次为 **研究开发版**，欢迎下载和交流。本项目基于ChatGPT 6 开发，作者本人也在学习中，欢迎相关专业同好交流
 
@@ -6,11 +6,19 @@ ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Pyt
 
 ## 授权与用途申请 / Licensing and purpose-only requests
 
-自0.3.4（2026-09-08）起正式采用[ZYO非商业测试许可1.0.0](LICENSE)，[范围清单](LICENSE-SCOPE.json)区分受限新增与历史MIT/第三方部分。许可人 **Ziyuan Li** 保留自有或有权授权内容的商业化，包括收费软件、商业许可和API/SaaS。[本版小结](docs/releases/0.3.6.md)。
+自0.3.4（2026-09-08）起正式采用[ZYO非商业测试许可1.0.0](LICENSE)，[范围清单](LICENSE-SCOPE.json)区分受限新增与历史MIT/第三方部分。许可人 **Ziyuan Li** 保留自有或有权授权内容的商业化，包括收费软件、商业许可和API/SaaS。[本版小结](docs/releases/0.3.7.md)。
 
 受限新增内容按账号/申请批准非商业测试，默认90日；商用、生产、再分发和服务另批。历史0.3.3和既有MIT代码仍可依[原MIT](LICENSES/MIT-legacy.txt)使用，无需新测试申请。[授权说明](docs/licensing-and-access.md)和[申请入口](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)只需概括用途，不索取实名、联系方式、单位或证明；公开Issue会显示平台账号及内容，请勿填写隐私。
 
-From0.3.4 (2026-09-08), the formal default is [ZYO Noncommercial Testing License1.0.0](LICENSE), with [scope](LICENSE-SCOPE.json) separating eligible additions from inherited MIT/third-party material. **Ziyuan Li** retains commercialization of owned/authorized material, including paid software, commercial licenses and API/SaaS. See the [release summary](docs/releases/0.3.6.md).
+From0.3.4 (2026-09-08), the formal default is [ZYO Noncommercial Testing License1.0.0](LICENSE), with [scope](LICENSE-SCOPE.json) separating eligible additions from inherited MIT/third-party material. **Ziyuan Li** retains commercialization of owned/authorized material, including paid software, commercial licenses and API/SaaS. See the [release summary](docs/releases/0.3.7.md).
+
+## 0.3.7 原 LP 证书与小基后验认证 / Original-LP certificate and small-basis posthoc check
+
+对原存储 binary64 模型逐项复核行、目标及简约成本乘积；微小未定价改善保留真实数值停止。手算四行 LP 的原生小基有理乘子建议经独立原模型证书通过后，公共接口分别记录认证状态与底层停止原因。CSC/CSR 重复系数在原生齐次模型与证书中同义汇总，并保持调用方矩阵不变。[中英公式、手算输入与本版两图](docs/releases/0.3.7.md)附有数据、脚本和后端 QA。
+
+The new original-model check recomputes stored-binary64 products for row activity, objective and reduced costs. Tiny unpriced improvement retains the raw native numerical stop; a four-row hand-checkable LP can obtain a separately verified small-basis posthoc certificate while still reporting that raw stop. Duplicate CSC/CSR entries receive matching native/certificate meaning without mutating the caller's matrix. The [bilingual case note and two versioned figures](docs/releases/0.3.7.md) include raw data, renderer and QA.
+
+当前候选源码另对四个 Netlib **开发题**各重复三次：严格原模型证书通过 **0/12**；`afiro`/`sc50b` 的候选目标接近参考值但证书拒绝，`adlittle`/`sc50a` 为数值停止。该批失败、状态及原输入独立审计保存在本地研发档案；本版手算小题的成功不提升这些大题的验收等级。 / The candidate source also reran four Netlib **development** LPs three times each: **0/12** passes the stricter original-model certificate. Close reference objectives for `afiro`/`sc50b` do not override certificate failure; `adlittle`/`sc50a` retain numerical stops. This narrow analytic improvement does not upgrade those larger cases.
 
 ## 0.3.6 稀疏公共 LP 输入 / Sparse public LP input
 
@@ -24,11 +32,11 @@ Restricted additions require account/request-approved noncommercial testing, def
 
 - 交付`Model.solve('native_simplex')`自主LP路径：有界变量稀疏修正单纯形、Phase-I和独立原始—对偶KKT检查。
 - 完成共享动作预算、人工驱除与被拒起点LU计数，复用有序基下标和向量基值更新。
-- Netlib四开发题各三次求解，12/12独立KKT复算通过；[新版本方法与实测](docs/releases/0.3.5.md)，[公式与API教程](docs/native_simplex.md)。
+- 0.3.5冻结源码的Netlib四开发题各三次求解，按当时容差KKT口径12/12复算通过；[该历史批次方法与实测](docs/releases/0.3.5.md)，[公式与API教程](docs/native_simplex.md)。当前候选源码的严格证书重验结果见上文。
 
-English: delivered the independent certified LP API, shared update budgets, complete successful-LU
-accounting and equivalent basis-update optimization. All12 fresh native Netlib calls pass independent
-KKT audits. See the linked release evidence and analytical API example.
+English: the 0.3.5 source delivered the independent LP API, shared update budgets, complete successful-LU
+accounting and equivalent basis-update optimization. Its 12 Netlib calls passed that release's
+tolerance-based KKT audit; the current candidate's stricter replay is reported above.
 
 ## 0.3.3 更新 / Updated in 0.3.3
 
@@ -92,11 +100,13 @@ python -m venv .venv
 Windows PowerShell：
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -e ".[native-sparse]"
+.\.venv\Scripts\python.exe -m pip install -e ".[native-sparse,storage]"
 .\.venv\Scripts\python.exe -X utf8 -m unittest discover -s tests -v
 ```
 
-Linux/macOS 对应解释器为 `.venv/bin/python`。只用密集自主内核可安装 `pip install -e .`；初次安装依赖需网络，安装完成后本地求解无需网络。当前不是 PyPI 发布，请不要把同名第三方包当作本项目安装。
+Linux/macOS 对应解释器为 `.venv/bin/python`。上述完整公开测试包含绘图重绘，因此安装命令同时选择 `storage` 的 Matplotlib；只运行原生 LP 可使用 `.[native-sparse]`，只用密集自主内核可安装 `pip install -e .`。初次安装依赖需网络，安装完成后本地求解无需网络。当前不是 PyPI 发布，请不要把同名第三方包当作本项目安装。
+
+The full public test suite redraws a figure and requires the `storage` extra (Matplotlib) alongside `native-sparse`. For native LP solving alone, `.[native-sparse]` is sufficient; the dense core alone can use `pip install -e .`.
 
 ## 第一个模型
 

@@ -59,6 +59,43 @@ def check_kkt(matrix, costs, lower, upper, values, *, tol=1e-6):
 
 
 class SimplexLoopTests(unittest.TestCase):
+    def test_entering_near_upper_limit_must_not_flip_past_basic_limit(self):
+        # 手算 x0=1e12(1-x1)，故 x1 最多为 1、最优值 -1；
+        # 入基变量上界 1+5e-10 距真正阻挡步长 1 很近，乘以行系数
+        # 1e12 后却会造成约 500 的原界违例，不能用定价容差误判翻界。
+        matrix = csc_matrix(np.array([[1., 1e12, -1.]]))
+        lower = np.array([0., 0., 1e12])
+        upper = np.array([1e12, 1.+5e-10, 1e12])
+        result = revised_simplex(matrix, [0., -1., 0.], lower, upper,
+                                 basic=[0], initial={1: 0., 2: 1e12},
+                                 iteration_limit=2, bland_after=0,
+                                 integer_zero_refine=False)
+        self.assertEqual(result.status, 'OPTIMAL', result.message)
+        self.assertEqual(result.history[0]['kind'], 'pivot')
+        self.assertAlmostEqual(result.objective, -1.)
+        self.assertLessEqual(float(np.max(np.abs(matrix @ result.values))), 1e-7)
+        self.assertLessEqual(result.max_primal_violation, 1e-7)
+
+    def test_near_ratio_tie_with_large_direction_preserves_original_bounds(self):
+        # 手算：x3 固定为 5e-13 时，起点 x0=5e-13、x1=0。
+        # x2 入基使两者分别以 1、1e8 的速度下降，真正先阻挡者为 x1（步长 0）；
+        # 若把 5e-13 的比率差当并列并选 x0，会使 x1=-5e-5，超出 1e-7 可行容差。
+        matrix = csc_matrix(np.array([[1., 0., 1., -1.],
+                                      [0., 1., 1e8, 0.]]))
+        lower = np.array([0., 0., 0., 5e-13])
+        upper = np.array([1., 1., 1., 5e-13])
+        result = revised_simplex(matrix, [0., 0., -1., 0.], lower, upper,
+                                 basic=[0, 1], iteration_limit=1, bland_after=0,
+                                 integer_zero_refine=False,
+                                 initial={2: 0., 3: 5e-13})
+        # 第二行和 x1,x2 下界迫使 x2=0；零目标因而也是独立手算最优值。
+        self.assertEqual(result.status, 'OPTIMAL', result.message)
+        self.assertAlmostEqual(result.objective, 0.)
+        self.assertEqual(result.history[0]['step'], 0.)
+        self.assertEqual(result.history[0]['leaving'], 1)
+        self.assertLessEqual(result.max_primal_violation, 1e-7)
+        self.assertGreaterEqual(result.values[1], -1e-7)
+
     def solve_dense_reference(self, matrix, cost, lower, upper, basic):
         """Dense reference: given a basis, compute the exact basic solution and duals."""
         matrix = np.asarray(matrix, dtype=float)
@@ -85,6 +122,32 @@ class SimplexLoopTests(unittest.TestCase):
         self.assertAlmostEqual(result.values[0], 3.0, places=6)
         self.assertAlmostEqual(result.values[1], 1.0, places=6)
 
+    def test_ratio_driver_receives_the_current_ordered_basis_array(self):
+        # 每次换基后的比例检验须直接使用与 SparseBasis 同步的有序 intp 数组；
+        # 原循环虽然数值正确，却每轮把十万级 Python 基列表重新解析为数组。
+        from zyo import sparse_simplex as simplex
+        matrix, lower, upper, initial, basic = standard_form(
+            [[1.0, 1.0], [1.0, 3.0]], ['<=', '<='], [4.0, 6.0], 2)
+        actual_inputs = []
+        original = simplex._ratio_limit_vectorized
+
+        def observe(indices, moving, values, lower_bounds, upper_bounds, tolerance):
+            actual_inputs.append((indices, np.asarray(indices).copy()))
+            return original(indices, moving, values, lower_bounds, upper_bounds, tolerance)
+
+        with patch.object(simplex, '_ratio_limit_vectorized', side_effect=observe):
+            result = revised_simplex(csc_matrix(matrix), [-1., -2., 0., 0.],
+                                     lower, upper, basic=basic, initial=initial)
+        self.assertEqual(result.status, 'OPTIMAL')
+        self.assertAlmostEqual(result.objective, -5., places=7)
+        self.assertEqual(len(actual_inputs), 2)
+        for indices, _ in actual_inputs:
+            self.assertIsInstance(indices, np.ndarray)
+            self.assertEqual(indices.dtype, np.dtype(np.intp))
+        self.assertIs(actual_inputs[0][0], actual_inputs[1][0])
+        np.testing.assert_array_equal(actual_inputs[0][1], [2, 3])
+        np.testing.assert_array_equal(actual_inputs[1][1], [2, 1])
+
     def test_maximization_is_handled_with_the_right_sign(self):
         # max 3x + y ; x + y <= 4 ; x <= 3 ; x, y >= 0  最优 (3, 1)，目标 10。
         matrix, lower, upper, initial, basic = standard_form(
@@ -110,6 +173,117 @@ class SimplexLoopTests(unittest.TestCase):
         self.assertAlmostEqual(result.values[0], 3.0, places=6)
         self.assertAlmostEqual(result.values[1], 2.0, places=6)
         self.assertTrue(result.phase_one.get('used'))
+
+    def test_limited_phase_one_exposes_only_a_checked_structural_candidate(self):
+        # 手算原齐次行 x=0；辅助限额点 (x,t)=(0,0) 可行，但不是最优证明。
+        from zyo.sparse_simplex import SimplexResult, _phase_one
+        matrix = csc_matrix([[1.]])
+        limited = SimplexResult('ITERATION_LIMIT', values=np.array([0., 0.]),
+                                objective=0., basic=[1], iterations=1, pivots=1)
+        with patch('zyo.sparse_simplex.revised_simplex', return_value=limited):
+            state, record = _phase_one(matrix, np.array([0.]), np.array([np.inf]),
+                                       1, 1, iteration_limit=1)
+        self.assertIsNone(state)
+        self.assertEqual(record['status'], 'ITERATION_LIMIT')
+        self.assertEqual(record['stopped_feasible_candidate'], [0.])
+        self.assertTrue(record['stopped_candidate_check']['internal_primal_feasible'])
+        wrong = SimplexResult('ITERATION_LIMIT', values=np.array([1., -1.]),
+                              objective=-1., basic=[1], iterations=1, pivots=1)
+        with patch('zyo.sparse_simplex.revised_simplex', return_value=wrong):
+            state, rejected = _phase_one(matrix, np.array([0.]), np.array([np.inf]),
+                                         1, 1, iteration_limit=1)
+        self.assertIsNone(state)
+        self.assertNotIn('stopped_feasible_candidate', rejected)
+        self.assertFalse(rejected['stopped_candidate_check']['internal_primal_feasible'])
+
+    def test_phase_one_feasibility_gate_stops_before_auxiliary_pricing(self):
+        # 原齐次行 x=0、人工 t=0 已可行；继续给 t 定价并非进入第二阶段的必要条件。
+        result = revised_simplex(csc_matrix([[1., 1.]]), np.array([0., 1.]),
+                                 np.array([0., 0.]), np.array([np.inf, np.inf]),
+                                 basic=[1], initial={0: 0.}, iteration_limit=3,
+                                 _phase_one_structural_columns=1)
+        self.assertEqual(result.status, 'PHASE_ONE_FEASIBLE')
+        self.assertEqual(result.iterations, 0)
+        self.assertEqual(result.values[0], 0.0)
+
+    def test_phase_one_feasibility_gate_does_not_hide_positive_artificial(self):
+        # 原行 -x=0 但 x 固定为 1，辅助 t=1 为真不可行；不能早停为原模型可行。
+        result = revised_simplex(csc_matrix([[-1., 1.]]), np.array([0., 1.]),
+                                 np.array([1., 0.]), np.array([1., np.inf]),
+                                 basic=[1], initial={0: 1.}, iteration_limit=3,
+                                 _phase_one_structural_columns=1)
+        self.assertNotEqual(result.status, 'PHASE_ONE_FEASIBLE')
+        self.assertGreater(result.values[1], 0.9)
+
+    def test_phase_one_early_feasibility_can_enter_artificial_cleanup(self):
+        # 用手算一行基验证内部新状态：驱除零人工后得到原列基，不伪造辅助最优。
+        from zyo.sparse_simplex import SimplexResult, _phase_one
+        feasible = SimplexResult('PHASE_ONE_FEASIBLE', values=np.array([0., 0.]),
+                                 objective=0., basic=[1], iterations=0, pivots=0)
+        with patch('zyo.sparse_simplex.revised_simplex', return_value=feasible):
+            state, record = _phase_one(csc_matrix([[1.]]), np.array([0.]),
+                                       np.array([np.inf]), 1, 1, iteration_limit=2)
+        self.assertEqual(state, 'FEASIBLE')
+        self.assertEqual(record['status'], 'PHASE_ONE_FEASIBLE')
+        self.assertEqual(record['basis'], [0])
+        self.assertEqual(record['iterations'], 1)
+
+    def test_artificial_cleanup_uses_transformed_pivot_row(self):
+        # B=[(1,1)^T,(1,0)^T]；原第 0 行的重复列 (1,1)^T 系数为 1，
+        # 但真实枢轴 e_1^T B^{-1}(1,1)^T=0。第 2 列 (0,1)^T 的枢轴为 -1。
+        from zyo.sparse_simplex import SimplexResult, _phase_one
+        matrix = csc_matrix([[1., 1., 0.], [1., 1., 1.]])
+        feasible = SimplexResult('PHASE_ONE_FEASIBLE', values=np.zeros(5),
+                                 objective=0., basic=[0, 3], iterations=0, pivots=0)
+        with patch('zyo.sparse_simplex.revised_simplex', return_value=feasible):
+            state, record = _phase_one(matrix, np.zeros(3), np.full(3, np.inf),
+                                       2, 3, iteration_limit=3, phase_one_crash=False)
+        self.assertEqual(state, 'FEASIBLE', record.get('reason'))
+        self.assertEqual(record['basis'], [0, 2])
+        self.assertEqual(record['drive_out'][0]['replaced_by'], 2)
+
+    def test_phase_two_numerical_failure_retains_checked_phase_one_point(self):
+        # 原齐次行 2x+3y=0 的零点可行；第二阶段数值失败不应抹掉这个独立候选，
+        # 但返回状态仍须是 NUMERICAL_ERROR，也不能产生已证最优目标。
+        from zyo.sparse_simplex import SimplexResult
+        phase_record = dict(used=True, status='PHASE_ONE_FEASIBLE', iterations=1,
+                            pivots=1, bound_flips=0, refactorisations=1,
+                            basis=[0], values=[0., 0.],
+                            original_feasible_check=dict(internal_primal_feasible=True))
+        failed = SimplexResult('NUMERICAL_ERROR', values=np.zeros(2), basic=[0],
+                               message='injected basis failure')
+        with patch('zyo.sparse_simplex._phase_one', return_value=('FEASIBLE', phase_record)), \
+                patch('zyo.sparse_simplex.revised_simplex', return_value=failed):
+            result = solve_lp(csc_matrix([[2., 3.]]), np.array([1., 1.]),
+                              np.zeros(2), np.full(2, np.inf))
+        self.assertEqual(result.status, 'NUMERICAL_ERROR')
+        np.testing.assert_allclose(result.phase_one_candidate, [0., 0.])
+        self.assertNotEqual(result.status, 'OPTIMAL')
+
+    def test_stable_zero_ratio_prefers_large_pivot_only_with_roundoff_tie(self):
+        # 旧最小比例由 1 ULP 的越界和 1e-7 小方向相除而来，步长最终仍裁为 0；
+        # 在同一零步长可行边界上改选单位主元不增加任何原始约束违例。
+        from zyo.sparse_simplex import _stable_zero_ratio_choice
+        eps = np.finfo(float).eps
+        basic = np.array([0, 1, 2])
+        moving = np.array([-1e-7, -1., -0.5])
+        lower = np.zeros(3)
+        upper = np.ones(3)
+        values = np.array([1.+eps, 1., 0.5])
+        old = (-eps/1e-7, 0, True)
+        chosen = _stable_zero_ratio_choice(basic, moving, values, lower, upper,
+                                           old, 1e-7, 1e-9, use_bland=False)
+        self.assertEqual(chosen, (0.0, 1, True))
+        self.assertEqual(_stable_zero_ratio_choice(basic, moving, values, lower, upper,
+                                                   old, 1e-7, 1e-9, use_bland=True), old)
+        self.assertEqual(_stable_zero_ratio_choice(basic, moving, values, lower, upper,
+                                                   (0.0, 0, True), 1e-7, 1e-9,
+                                                   use_bland=False), (0.0, 0, True))
+        far_values = np.array([1.+1e-5, 1., 0.5])
+        self.assertEqual(_stable_zero_ratio_choice(basic, moving, far_values,
+                                                   lower, upper, (-100., 0, True),
+                                                   1e-7, 1e-9, use_bland=False),
+                         (-100., 0, True))
 
     def test_infeasible_equalities_are_proved_by_phase_one(self):
         # x + y = 5 与 x + y = 7 同时要求，必然不可行。两个固定逻辑变量 s0 ∈ [5,5]、
@@ -334,6 +508,50 @@ class SimplexLoopTests(unittest.TestCase):
         # 重试一次后仍然失败：如实报 NUMERICAL_ERROR，绝不放宽残差门或无限重试。
         self.assertEqual(result.status, 'NUMERICAL_ERROR', result.message)
         self.assertIn('refactorisation did not restore the basis', result.message)
+        self.assertEqual(result.refactor_retries, 1)
+
+    def test_pivot_ftran_failure_refactorises_once_before_ratio_test(self):
+        # 手算 x+s=0、x,s>=0：入基方向应验证；首次故障只重分解，不得据坏列换基。
+        from zyo.errors import NumericalError
+        from zyo.sparse_simplex import SparseBasis
+        original = SparseBasis.ftran
+        calls = {'entering': 0}
+
+        def first_bad(self, rhs, validate=True):
+            if np.array_equal(np.asarray(rhs), [1.]):
+                calls['entering'] += 1
+                if not validate:
+                    raise AssertionError('Pivot FTRAN bypassed the current-basis residual gate')
+                if calls['entering'] == 1:
+                    raise NumericalError('injected pivot direction residual; refactorise')
+            return original(self, rhs, validate=validate)
+
+        with patch.object(SparseBasis, 'ftran', first_bad):
+            result = revised_simplex(csc_matrix([[1., 1.]]), [-1., 0.],
+                                     [0., 0.], [np.inf, np.inf],
+                                     basic=[1], iteration_limit=1)
+        self.assertEqual(result.status, 'OPTIMAL', result.message)
+        self.assertEqual(result.pivots, 1)
+        self.assertEqual(result.refactor_retries, 1)
+        self.assertEqual(calls['entering'], 2)
+
+    def test_persistent_pivot_ftran_failure_preserves_numerical_status(self):
+        # 两次验证都失败时不执行任何换基，也不因原点可行而宣称最优。
+        from zyo.errors import NumericalError
+        from zyo.sparse_simplex import SparseBasis
+        original = SparseBasis.ftran
+
+        def always_bad(self, rhs, validate=True):
+            if np.array_equal(np.asarray(rhs), [1.]):
+                raise NumericalError('injected persistent pivot direction residual; refactorise')
+            return original(self, rhs, validate=validate)
+
+        with patch.object(SparseBasis, 'ftran', always_bad):
+            result = revised_simplex(csc_matrix([[1., 1.]]), [-1., 0.],
+                                     [0., 0.], [np.inf, np.inf],
+                                     basic=[1], iteration_limit=1)
+        self.assertEqual(result.status, 'NUMERICAL_ERROR', result.message)
+        self.assertEqual(result.pivots, 0)
         self.assertEqual(result.refactor_retries, 1)
 
     def test_refactor_retries_is_zero_on_a_clean_solve(self):

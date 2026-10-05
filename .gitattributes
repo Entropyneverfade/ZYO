@@ -1,3 +1,28 @@
 # 本版图源表、QA与绘图脚本固定LF；Windows检出不得改变图源SHA-256。
 docs/public/figures/0.3.6/Fig01_MatrixStorage/** -text
 docs/figures/0.3.6/Fig01_MatrixStorage/** -text
+# 0.3.7 手算图源、脚本及 QA 保持原始字节，便于跨平台核验随版哈希。
+docs/public/figures/0.3.7/Fig01_Cancellation/** -text
+docs/figures/0.3.7/Fig01_Cancellation/** -text
+docs/public/figures/0.3.7/Fig01_UnpricedNarrow/** -text
+docs/figures/0.3.7/Fig01_UnpricedNarrow/** -text
+# 本地 Phase-II 图源与审图回执逐字节绑定；重检出也需保留原始哈希。
+docs/research/figures/phase_two_rescue_20261005/Fig01_Air05Descent/** -text
+# 原始 LP 有理审计工具、报告和图件逐字节冻结；Windows 检出保持 LF。
+tools/audit_phase_two_bridge_trial.py -text
+tools/audit_phase_two_dual_bound.py -text
+tools/audit_phase_two_exact_step.py -text
+tools/experiment_phase_two_coordinate_dual.py -text
+docs/research/phase_two_exact_step_20261005.md -text
+docs/research/phase_two_coordinate_dual_20261005.md -text
+docs/research/figures/phase_two_coordinate_dual_20261005/Fig01_BoundProgress/** -text
+# air03 事后控制的候选源码以原始字节哈希固定；检出不得替换换行。
+tools/experiment_air03_exact_coordinate_control.py -text
+# 零步整数基认证与受监督回放按工作区原始字节冻结。
+zyo/primal_integer_zero_refine.py -text
+tools/diagnose_phase_two_integer_snap.py -text
+tools/audit_phase_two_integer_snap.py -text
+docs/research/figures/phase_two_integer_snap_20261005/Fig01_StepAndWall/** -text
+# 第二边界题图源与双语报告按原始字节记录哈希，跨平台检出保持不变。
+docs/research/figures/phase_two_air03_control_20261005/Fig01_DualStart/** -text
+docs/research/phase_two_integer_snap_air03_20261005.md -text

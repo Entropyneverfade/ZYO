@@ -6,6 +6,7 @@ include examples/run_uc.py examples/uc_24h.json
 include CONTRIBUTING.md CHANGELOG.md
 include docs/quickstart_zh.md docs/licensing-and-access.md
 include docs/native_simplex.md docs/releases/0.3.5.md docs/releases/0.3.6.md
+include docs/releases/0.3.7.md
 include tools/measure_public_lp_input.py
 include docs/limitations.md docs/unit_commitment.md docs/mps.md docs/uc_results.md
 include docs/sparse_reuse.md docs/implementation_languages.md
@@ -13,3 +14,4 @@ include docs/releases/0.3.3.md docs/releases/0.3.4.md
 # 仅公开白名单导出树的图和源表进入发行源码包，保留旧图文件身份与版本归属。
 recursive-include docs/figures *.svg *.csv
 recursive-include docs/figures/0.3.6 *.py *.json
+recursive-include docs/figures/0.3.7 *.py *.json

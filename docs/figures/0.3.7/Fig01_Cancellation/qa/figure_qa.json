@@ -1,0 +1,50 @@
+{
+  "actual_backend": "Python / matplotlib Agg fallback",
+  "fallback_reason": "Same-day Origin native export carried a demo watermark over plotted data",
+  "origin_trial": "Demo-watermarked trial is retained in the private research archive",
+  "source_test_relative": "tests/test_lp_certificate_product_cancellation.py",
+  "source_test_sha256_at_render": "e482774dad9523c8cad87d398fbc3c359166c9e8210648481d2579cbb9aa4902",
+  "source_test_sha256_at_release": "7b802466849a85a100015e855e646443f542df7c9e955673f56327e4ceb2a631",
+  "release_test_identity_note": "The test module changed after rendering to add certificate controls. The original numeric fixture is independently bound by the unchanged CSV hash; SVG, CSV and renderer hashes below are unchanged. The render-time test hash is retained as historical evidence.",
+  "source_data_sha256": "1a9e5058288e5bdfa230ec467fb012f4d7332e445de66dfd061ee4e3f437f20d",
+  "script_sha256": "b124ed1148881902061decb9082668d0f7acc77128891959f387058d21e85029",
+  "figure_sha256": {
+    "png": "2da38e93ca84f3a76f914daf27df87482a0e6b70c0dfc7f290806befab23f48d",
+    "pdf": "0eb676ccd4878a408cc728c1d35a1caf71482d33622709b99028f08cf88ef6b5",
+    "svg": "a8400709fc2f8ef23f7c6a465326fc0bf119044070633f5558d6364b788311c6"
+  },
+  "analytic_tolerance": "1e-7 row-unit absolute threshold for this didactic gate",
+  "rounded_product_first_residuals": [
+    "0.0",
+    "0.0"
+  ],
+  "exact_residuals": [
+    "3.3707726085685508e-05",
+    "-1.3878964431723873e-05"
+  ],
+  "declared_axes": {
+    "panel_a_x_display": [
+      0.5,
+      2.5
+    ],
+    "panel_a_x_end_ticks": [
+      0.5,
+      2.5
+    ],
+    "panel_a_y_display": [
+      -4.0,
+      4.0
+    ],
+    "panel_a_y_end_ticks": [
+      -4.0,
+      4.0
+    ]
+  },
+  "scope": "Analytic certificate arithmetic counterexample; not a solver-speed benchmark",
+  "visual_review": "PASS: final 600-dpi PNG and fresh 200-dpi PDF raster inspected; text, markers, boxes, and four axis-end tick marks visible without clipping",
+  "pdf_page_count": 1,
+  "pdf_page_size_mm": [190, 118],
+  "pdf_fonts": "Embedded SimSun and Times New Roman subsets",
+  "focused_certificate_tests": "5/5 passed",
+  "origin_processes_after": 0
+}

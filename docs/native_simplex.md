@@ -19,6 +19,35 @@ Exact free-variable splitting and homogeneous row encoding preserve the original
 ZYO owns the optimization logic; NumPy and SciPy/SuperLU provide basic numerical operations.
 The original objective direction, constant and variable mapping are restored in the result.
 
+### 0.3.7 原模型证书与后验小基 / Original-model certificate and posthoc small basis
+
+定价阈值只控制入基选择；底层发现严格但低于该门的改善成本时保留 `NUMERICAL_ERROR` 与 `unpriced_optimality` 标记。若当前完整基不超过8行、64列，ZYO 自身可从已存储的 binary64 $B,c_B$ 用有理数求候选 $B^Ty=c_B$。**它只是行乘子建议**：原模型证书仍逐项复核行活动、界、对偶符号、所有简约成本、互补及目标差。通过后公共 `OPTIMAL` 表示在既定容差内完成证书认证，`metadata.raw_status` 继续记录底层数值停止；限额、Phase-I 与其他数值错误不适用此恢复。
+
+The pricing threshold selects an entering column, not a proof of optimality. A strictly improving but unpriced column retains a native numerical stop. An exact-rational small-basis equation proposes multipliers only; full original-model certification is the acceptance gate. The public certified status and raw native stop are separate fields, and the helper is capped at eight rows and 64 columns.
+
+公共四行手算例 / Public four-row analytic example:
+
+```python
+import zyo
+
+m = zyo.Model('four-row-posthoc')
+p = m.add_var('p', lb=None, ub=None)
+q = m.add_var('q', lb=None, ub=None)
+v = m.add_var('v', lb=0, ub=None)
+m.add_constr(p + v <= 1)
+m.add_constr(q + v <= 1)
+m.add_constr(p - 2*q + v <= 0)
+m.add_constr(-2*p + q + v <= 0)
+m.maximize(v)
+r = m.solve('native_simplex', iteration_limit=100)
+print(r.status, r.objective, r.metadata['raw_status'])
+print(r.metadata['certificate']['verified'], r.metadata['fallback_used'])
+```
+
+$(p,q,v)=(1/2,1/2,1/2)$ 可行，行权重 $(1/2,0,1/6,1/3)$ 消去自由变量得 $v\le1/2$，所以目标 $0.5$ 可独立核对。另在非规范 CSC/CSR 输入中，相同 `(row,column)` 的有限值按 binary64 汇总一次，然后齐次求解模型与原模型证书使用同一矩阵；调用方原始稀疏数组保持不变。重复值求和溢出则明确报输入错误。
+
+The weighted-row inequality independently proves the $0.5$ optimum. Duplicate sparse coordinates are normalized consistently across solving and certification without changing the caller's arrays; a nonfinite sum raises an input error.
+
 ## 安装后手算复现 / Installed hand-checkable example
 
 安装 `.[native-sparse]`，再运行 / Install `.[native-sparse]`, then run:
@@ -80,6 +109,8 @@ python -B -X utf8 -m unittest discover -s tests -v
 ```
 
 来源 / Sources: [Huangfu & Hall, 2018](https://doi.org/10.1007/s12532-017-0130-5)的基方程与操作定义；
+[Applegate 等精确 LP 原文，§3](https://www.math.uwaterloo.ca/~bico/papers/exact_simplex.pdf)提供事后精确检查的方法背景；
+[Gill 等 EXPAND 原文，§2](https://web.stanford.edu/group/SOL/papers/EXPAND.pdf)用于区分有限精度下的定价/比值风险；
 [NumPy2.2索引赋值](https://numpy.org/doc/2.2/user/basics.indexing.html#assigning-values-to-indexed-arrays)
 用于唯一基下标更新；[Gurobi公开日志定义](https://docs.gurobi.com/projects/optimizer/en/current/concepts/logging/simplex.html)
 用于工作量/状态分离。它们是公开参考，不是ZYO调用外部优化器的实现。

@@ -2,9 +2,9 @@
 
 ## 1. 获取和安装
 
-0.3.6受限新增内容安装/运行前，先阅读[LICENSE](../LICENSE)及[范围](../LICENSE-SCOPE.json)，在[用途申请](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)只填用途，获账号/申请批准并接受条款后在期限内测试（默认90日）。仅使用独立历史MIT部分依原许可，无需新申请。商用、生产、再分发及服务另批；API权限独立管理。
+0.3.7受限新增内容安装/运行前，先阅读[LICENSE](../LICENSE)及[范围](../LICENSE-SCOPE.json)，在[用途申请](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)只填用途，获账号/申请批准并接受条款后在期限内测试（默认90日）。仅使用独立历史MIT部分依原许可，无需新申请。商用、生产、再分发及服务另批；API权限独立管理。
 
-Before installing/running restricted0.3.6 additions, read the license/scope, submit only purpose, obtain account/request approval and assent, then test within the term (default90 days). Independent historical MIT portions retain original rights without a new request. Commercial/production use, redistribution and services need separate approval; API rights are separate.
+Before installing/running restricted0.3.7 additions, read the license/scope, submit only purpose, obtain account/request approval and assent, then test within the term (default90 days). Independent historical MIT portions retain original rights without a new request. Commercial/production use, redistribution and services need separate approval; API rights are separate.
 
 从仓库页面选择 **Code → Download ZIP**，解压后进入含 `pyproject.toml` 的目录；或者按 README 使用 Git 克隆。以下命令以 Windows PowerShell 为例：
 
@@ -13,13 +13,15 @@ python -m venv .venv
 $py = '.\.venv\Scripts\python.exe'
 $env:PYTHONUTF8 = '1'
 $env:PYTHONIOENCODING = 'utf-8'
-& $py -m pip install -e ".[native-sparse]"
+& $py -m pip install -e ".[native-sparse,storage]"
 & $py -m pip check
 & $py -m zyo --version
 & $py -m unittest discover -s tests -v
 ```
 
-可编辑安装会直接使用当前源码。修改代码后重启 Python；不要在同一环境混装多个源码目录。仅 NumPy 安装将跳过依赖 SciPy 的测试，必须报告跳过数量，不能声称全项验证。
+可编辑安装会直接使用当前源码。修改代码后重启 Python；不要在同一环境混装多个源码目录。完整公开测试含可视化重绘，需要 `storage` 可选依赖中的 Matplotlib；只求解原生 LP 可单装 `.[native-sparse]`。仅 NumPy 安装将跳过依赖 SciPy 的测试，必须报告跳过数量，不能声称全项验证。
+
+An editable install uses this source tree directly. The full public suite redraws a figure and therefore requires Matplotlib from the `storage` extra; native LP solving alone may use `.[native-sparse]`. Report all skips under a NumPy-only installation.
 
 Linux/macOS 用 `python3 -m venv .venv`、`.venv/bin/python` 替代上述解释器路径；这些平台尚需用户自行实测。
 
@@ -54,11 +56,12 @@ m.write('model.json')
 连续LP可显式选择`m.solve('native_simplex', iteration_limit=100)`，使用自研稀疏修正单纯形，
 并读取`r.metadata['certificate']`的原尺度KKT检查和`iteration_budget`。
 自由变量/单边界由认证LP路径精确标准化；`native_sparse`有限盒MILP路径另有边界要求。
-[完整手算例、公式与测试命令](native_simplex.md)；[本版稀疏入口、图与实测](releases/0.3.6.md)。
+[完整手算例、公式与测试命令](native_simplex.md)；[0.3.7原模型证书与两张反例图](releases/0.3.7.md)；[0.3.6稀疏输入历史验收](releases/0.3.6.md)。
 
 For continuous LPs, explicitly select `native_simplex` and inspect the original-scale KKT certificate
 and shared executed-update budget. Free/one-sided variables follow exact LP transformations;
-the finite-box MILP engine `native_sparse` has a separate domain contract. See the analytical guide.
+the finite-box MILP engine `native_sparse` has a separate domain contract. See the analytical guide,
+the0.3.7 original-certificate case note and the retained0.3.6 sparse-input acceptance.
 
 ## 3. 不调用优化器的储能教学例
 

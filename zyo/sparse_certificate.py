@@ -1,11 +1,13 @@
-# 原始有限盒上的弱对偶界与充分不可行证书；使用浮点保护，不是精确算术证明器。
-"""Original-unit Lagrangian box bounds, independent of the sparse LP algorithm.
+# 原始有限盒的浮点证书与一般变量域的精确不可行复核；两种算术范围分别标记。
+"""Original-unit infeasibility checks, independent of the sparse LP algorithm.
 
 For minimization: lambda <= 0 for <= rows, >= 0 for >= rows; equality
 multipliers are free. Any such lambda gives a bound even with nonzero reduced
-costs. All variable bounds must be finite. This is floating-point verification,
-with a conservative arithmetic allowance, not exact rational certification.
+costs. The box checks require finite bounds and use guarded floating-point
+arithmetic. The separate original-domain Farkas check uses exact rationals for
+the parsed binary64 model and permits one-sided or free variable domains.
 """
+from fractions import Fraction
 import math
 import numpy as np
 
@@ -133,3 +135,65 @@ def box_infeasibility(model, multipliers, lower=None, upper=None, *, feasibility
                 tolerance_allowance=tolerance,feasibility_tol=feasibility_tol,
                 multipliers=lam.tolist(),lower=lo.tolist(),upper=hi.tolist(),
                 scope='sufficient floating-point original-box separation; no objective or optimizer used')
+
+
+def original_domain_infeasibility(model, multipliers, *, feasibility_tol=1e-7):
+    """Check a proposed Farkas ray over the original finite, one-sided or free domains."""
+    # 只把已存储的有限 binary64 数视为精确有理数；不把人造上界带入原域证明。
+    def rational(value):
+        number=float(value)
+        if not math.isfinite(number):
+            raise ValueError('Non-finite original-domain Farkas arithmetic')
+        return Fraction.from_float(number)
+
+    try:
+        values=[float(value) for value in multipliers]
+        if len(values)!=len(model.constraints):
+            raise ValueError('Multiplier count differs from original rows')
+        lam=[rational(value) for value in values]
+        tolerance=rational(feasibility_tol)
+    except (TypeError,OverflowError) as exc:
+        raise ValueError('Invalid original-domain Farkas input') from exc
+    if tolerance<0:
+        raise ValueError('Feasibility tolerance must be nonnegative')
+
+    base=dict(kind='original_domain_farkas',verified=False,multipliers=values,
+              feasibility_tol=float(feasibility_tol),
+              scope='exact rational original-domain separation of parsed binary64 model '
+                    'with feasibility-tolerance expansion; no objective or optimizer used')
+    reduced=[Fraction(0) for _ in model.variables]
+    row_constant=Fraction(0)
+    for row,weight in zip(model.constraints,lam):
+        if (row.sense=='<=' and weight>0) or (row.sense=='>=' and weight<0):
+            return dict(base,reason='Multiplier sign is incompatible with an original row')
+        if row.sense not in ('<=','>=','=='):
+            return dict(base,reason='Unknown original row sense')
+        row_constant+=rational(row.expression.constant)*weight
+        for index,coefficient in row.expression.terms.items():
+            if not isinstance(index,int) or not 0<=index<len(reduced):
+                raise ValueError('Original row contains an invalid variable index')
+            reduced[index]-=rational(coefficient)*weight
+
+    endpoint_sum=Fraction(0)
+    for var,value in zip(model.variables,reduced):
+        lower=float(var.lb); upper=float(var.ub)
+        if (math.isnan(lower) or math.isnan(upper) or lower>upper
+                or lower==math.inf or upper==-math.inf):
+            raise ValueError('Original variable domain is invalid')
+        # 极小但严格非零的反向系数也不能按零处理：无穷方向可放大任意倍。
+        if value>0:
+            if not math.isfinite(lower):
+                return dict(base,reason='Negative-infinite lower direction invalidates ray')
+            endpoint_sum+=value*rational(lower)
+        elif value<0:
+            if not math.isfinite(upper):
+                return dict(base,reason='Positive-infinite upper direction invalidates ray')
+            endpoint_sum+=value*rational(upper)
+
+    raw=endpoint_sum-row_constant
+    # 行与变量界都允许 feasibility_tol：每个乘子和简约系数的绝对值各贡献一次扩张。
+    allowance=tolerance*(sum(map(abs,lam))+sum(map(abs,reduced)))
+    margin=raw-allowance
+    return dict(base,verified=bool(margin>0),raw_margin_exact=str(raw),
+                tolerance_allowance_exact=str(allowance),margin_exact=str(margin),
+                reason=None if margin>0 else 'Separation does not exceed feasibility tolerance')

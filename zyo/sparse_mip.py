@@ -11,7 +11,8 @@ import time
 import numpy as np
 from scipy.sparse import coo_matrix
 
-from .sparse_certificate import primal_check as check_solution, objective_value as _objective
+from .sparse_certificate import (primal_check as check_solution, objective_value as _objective,
+                                 original_domain_infeasibility)
 from ._version import __version__
 from .result import Result
 from .status import Status
@@ -60,10 +61,9 @@ def solve(model,options):
     reformulation is a device of our own making, so every width tried is recorded
     and an ACTIVE artificial bound at the candidate forbids an optimality claim by
     the box bound alone: the width is escalated, and the candidate is accepted only
-    when the ORIGINAL-domain weak-duality bound closes the gap. When the reduced
-    costs prove the objective can improve without limit along an unbounded
-    direction, the model is reported UNBOUNDED instead of returning a clipped
-    candidate as an optimum.
+    when the ORIGINAL-domain weak-duality bound closes the gap. An infinite
+    Lagrangian infimum for a chosen multiplier is not a primal unbounded ray;
+    without a checked original-domain proof the result stays unresolved.
     """
     from .sparse_domain import needs_domain_transform
     from .sparse_lp import _canonical_model
@@ -72,14 +72,15 @@ def solve(model,options):
     canonical=_canonical_model(model)
     if not needs_domain_transform(canonical):
         return _solve_box(canonical,options)
-    return _solve_domains(canonical,options)
+    return _solve_domains(canonical,options,original_model=model)
 
 
-def _solve_domains(model,options):
+def _solve_domains(model,options,*,original_model=None):
     """Escalating artificial-width driver for models without a finite box."""
     from .sparse_domain import (ARTIFICIAL_LADDER, active_artificial, build_transformed,
                                 domain_bound, original_multipliers, recover_primal)
     started=time.perf_counter()
+    original_model=model if original_model is None else original_model
     attempts=[]
     best=None
     last=None
@@ -89,8 +90,35 @@ def _solve_domains(model,options):
         transformed,columns=build_transformed(model,artificial)
         inner=_solve_box(transformed,options)
         attempt=dict(artificial=artificial,status=str(inner.status),reason=inner.termination_reason,
-                     transformed_variables=len(transformed.variables),nodes=inner.node_count)
+                     transformed_variables=len(transformed.variables),nodes=inner.node_count,
+                     iterations=inner.iteration_count)
         attempts.append(attempt)
+        if inner.status==Status.INFEASIBLE:
+            # 内层有限人造盒不可行只提供候选射线；必须在无穷原域按精确系数重新验算。
+            root=inner.metadata.get('root_relaxation')
+            candidate=root.get('infeasibility_certificate') if hasattr(root,'get') else None
+            if (root is not None and root.get('status')=='INFEASIBLE'
+                    and hasattr(candidate,'get') and candidate.get('verified')
+                    and candidate.get('multipliers') is not None):
+                try:
+                    # 规范化曾翻转 >= 行；乘子逐行反向回拉后在调用方原行上验算。
+                    multipliers=[-value if row.sense=='>=' else value
+                                 for row,value in zip(original_model.constraints,
+                                                      candidate['multipliers'])]
+                    proof=original_domain_infeasibility(
+                        original_model,multipliers,feasibility_tol=options.feasibility_tol)
+                except (ArithmeticError,TypeError,ValueError,OverflowError) as exc:
+                    attempt['original_domain_certificate_reason']=str(exc)
+                else:
+                    attempt['original_domain_certificate_verified']=proof['verified']
+                    attempt['original_domain_certificate_reason']=proof.get('reason')
+                    if proof['verified']:
+                        # 传入真实内层结果以保留节点、迭代及有限盒诊断，但采纳的是独立原域证明。
+                        return _domain_result(
+                            model,Status.INFEASIBLE,None,None,None,None,inner,started,
+                            'Original-domain Farkas separation verified from transformed root LP',
+                            dict(attempts=attempts,certified_width=artificial,
+                                 original_domain_infeasibility_certificate=proof))
         if inner.status!=Status.OPTIMAL or not inner.values:
             last=inner
             if inner.status==Status.TIME_LIMIT:
@@ -112,20 +140,20 @@ def _solve_domains(model,options):
         bound=None; lam=None; candidate=None
         if certificate is not None:
             lam=original_multipliers(certificate)
-            candidate=domain_bound(model,lam)
+            # 规范化把 >= 行翻转过；回拉到调用方原行后再做精确弱对偶核验。
+            if lam is not None and len(lam)==len(original_model.constraints):
+                original_lam=[-float(value) if row.sense=='>=' else float(value)
+                              for row,value in zip(original_model.constraints,lam)]
+                candidate=domain_bound(original_model,original_lam)
+            else:
+                candidate=dict(available=False,reason='Original row multiplier count differs')
             attempt['bound_available']=candidate['available']
             attempt['bound_reason']=None if candidate['available'] else candidate['reason']
             if candidate['available']:
                 bound=candidate['bound']
         record=dict(artificial=artificial,variables=[column['kind'] for column in columns])
-        if bound is None and candidate is not None and candidate.get('can_improve_without_limit'):
-            # 简约成本与变量域不相容 => 该方向可无限改进：这是可核验的无界证据，
-            # 不是"人造界裁剪"。此时报告 UNBOUNDED，而不是把裁剪点当最优或含糊未决。
-            return _domain_result(model,Status.UNBOUNDED,None,None,None,None,None,started,
-                                  'Unbounded improving direction: '+str(candidate['reason']),
-                                  dict(record,attempts=attempts,improving_variables=candidate['variables']))
         if bound is None:
-            # 拿不到有效的原域界：不声明最优，放大宽度继续尝试。
+            # 无有限原域对偶界不等于原问题无界；继续尝试，仍无证明则保留未决。
             attempt['rejected']='no valid original-domain bound'
             last=inner
             continue
@@ -141,11 +169,21 @@ def _solve_domains(model,options):
             attempt['rejected']='original-domain gap exceeds the declared tolerance'
             last=inner
             continue
-        result=_domain_result(model,inner.status,objective,bound,gap,original,inner,started,
+        # 证书内部按最小化方向保存弱界；公开结果与证书主字段必须恢复调用方目标方向。
+        # 最小化下界向下取整后取负，恰是最大化目标的保守上界。
+        original_bound=direction*bound
+        attempt['bound_certificate']=dict(
+            bound=original_bound,normalized_min_bound=bound,
+            raw_bound=direction*candidate['raw_bound'],
+            roundoff_allowance=candidate['roundoff_allowance'],
+            multipliers_exact=candidate['multipliers_exact'],
+            multiplier_source=candidate['multiplier_source'],
+            objective_sense=model.sense,scope=candidate['scope'])
+        result=_domain_result(model,inner.status,objective,original_bound,gap,original,inner,started,
                               'Original-domain primal, integrality and weak-duality gap checks passed',
                               dict(record,attempts=attempts))
         if best is None or gap<best[0]:
-            best=(gap,result,original)
+            best=(gap,result,original,inner)
             if gap<=min(options.objective_tol,1e-9):
                 return result
     if last is not None and best is None:
@@ -157,10 +195,15 @@ def _solve_domains(model,options):
                               dict(attempts=attempts,final_inner_status=str(last.status)))
     if best is not None:
         # 阶梯中已获得闭合的界，但更宽的尝试失败；返回已验证过的最紧候选。
-        gap,result,original=best
+        gap,result,original,selected_inner=best
+        # 早期已认证档次被保留时，用它的实际根求解信息重建；尝试表则取全阶梯现场。
+        # Result 会深冻结元数据，不能复用早期快照而遗漏后续档次失败。
         return _domain_result(model,result.status,result.objective,result.best_bound,gap,
-                              original,None,started,result.termination_reason,
+                              original,selected_inner,started,result.termination_reason,
                               dict(result.metadata['domain_transform'],
+                                   attempts=attempts,
+                                   selected_nodes=selected_inner.node_count,
+                                   selected_iterations=selected_inner.iteration_count,
                                    selected_by='tightest closed original-domain gap'))
     if last is None:
         return _domain_result(model,Status.UNKNOWN,None,None,None,None,None,started,
@@ -196,12 +239,17 @@ def _domain_result(model,status,objective,bound,gap,original,inner,started,messa
     metadata=dict(inner.metadata) if inner is not None and hasattr(inner,'metadata') else {}
     metadata.update(domain_transform=record,fallback_requested=False,fallback_used=False,
                     scope='experimental sparse LP/MILP; non-finite domains resolved by exact affine reformulation')
+    # 多档人造盒是连续的真实求解调用；公开总计数需累计全部尝试，选中档另记在元数据。
+    attempts=record.get('attempts') if hasattr(record,'get') else None
+    nodes=(sum(int(attempt['nodes']) for attempt in attempts) if attempts is not None
+           else inner.node_count if inner is not None else 0)
+    iterations=(sum(int(attempt['iterations']) for attempt in attempts) if attempts is not None
+                else inner.iteration_count if inner is not None else 0)
     return Result(status=status,solver_name='native_sparse',solver_version=__version__,
                   objective=objective,best_bound=bound,mip_gap=gap,
                   values={v.name:float(original[i]) for i,v in enumerate(model.variables)} if original is not None else {},
                   runtime=time.perf_counter()-started,
-                  node_count=inner.node_count if inner is not None else 0,
-                  iteration_count=inner.iteration_count if inner is not None else 0,
+                  node_count=nodes,iteration_count=iterations,
                   primal_residual=feasibility,bound_residual=bound_residual,integrality_residual=integrality,
                   termination_reason=message,metadata=metadata)
 

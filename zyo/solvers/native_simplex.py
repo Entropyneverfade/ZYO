@@ -16,15 +16,17 @@ Two deliberate contracts:
   conditions are recorded in the metadata; the raw solver status is preserved alongside so the
   disagreement is auditable instead of hidden.
 """
+import math
 import time
 from dataclasses import asdict
+from fractions import Fraction
 
 from zyo._version import __version__
 from zyo.capabilities import LP
 from zyo.modeling.matrix import DEFAULT_DENSE_ENTRY_GATE, model_arrays, model_sparse_arrays
 from zyo.result import Result
 from zyo.status import Status
-from zyo.validation import evaluate_objective, validate_candidate
+from zyo.validation import validate_candidate
 
 from .base import BackendInfo
 
@@ -123,11 +125,18 @@ class NativeSimplexBackend:
         runtime = time.perf_counter()-started
         try:
             certificate = outcome.certificate
+            posthoc = dict(outcome.record.get('posthoc_unpriced_basis_certificate') or {})
+            posthoc.setdefault('accepted', False)
             metadata = dict(
                 base_metadata, capability='LP', matrix_format='csc', model_nonzeros=int(matrix.nnz),
                 model_rows=int(matrix.shape[0]), model_columns=int(matrix.shape[1]),
-                raw_status=outcome.status,
-                raw_message=outcome.message, raw_gap=None if certificate is None
+                # 事后原模型证书可提升公开状态，但底层定价停止原因必须原样可见。
+                raw_status=outcome.record.get('solver_status', outcome.status),
+                certified_status=outcome.status,
+                raw_message=outcome.record.get('solver_message', outcome.message),
+                unpriced_optimality_stop=bool(outcome.record.get('unpriced_optimality_stop', False)),
+                posthoc_unpriced_basis_certificate=posthoc,
+                raw_gap=None if certificate is None
                 else certificate.duality_gap,
                 raw_objective=outcome.objective, pivots=int(outcome.pivots),
                 refactorisations=int(outcome.refactorisations),
@@ -144,6 +153,16 @@ class NativeSimplexBackend:
                     row_sign_violation=certificate.row_sign_violation,
                     multiplier_scale=certificate.multiplier_scale),
             )
+            if outcome.optimal and (certificate is None or not certificate.verified):
+                # 适配器自身再守一道门：下层误传 optimal 时，原模型完整证书
+                # 未核准就不能发布目标、最优界或最优状态。
+                return Result(
+                    status=Status.NUMERICAL_ERROR, solver_name=info.name,
+                    solver_version=info.version, objective=None, best_bound=None,
+                    mip_gap=None, values={}, runtime=runtime, node_count=0,
+                    iteration_count=int(outcome.iterations),
+                    termination_reason='native LP claimed optimal without a verified original certificate',
+                    metadata=metadata)
             if not outcome.optimal:
                 return Result(
                     status=_STATUS_MAP.get(outcome.status, Status.UNKNOWN), solver_name=info.name,
@@ -156,7 +175,35 @@ class NativeSimplexBackend:
                       for index, value in enumerate(outcome.values)}
             residuals = validate_candidate(model, values, options.feasibility_tol,
                                            options.integrality_tol)
-            objective = evaluate_objective(model, values)
+            try:
+                # 证书已核验原线性部分；公开模型还含用户常数。每个原存储 binary64
+                # 先转有理数再做乘法与总和，防止“线性部分先舍入、再加常数”抹掉低位。
+                exact_objective = Fraction.from_float(float(constant))
+                for index, coefficient in model.objective.terms.items():
+                    exact_objective += (Fraction.from_float(float(coefficient))
+                                        * Fraction.from_float(float(outcome.values[index])))
+                objective = float(exact_objective)
+                # 事后有理重构及一般KKT都是容差认证；界取证书的保守对偶值，
+                # 依最小/最大化方向向外舍入。LP不报告虚构的零MIP Gap。
+                signed_bound = Fraction.from_float(float(certificate.dual_objective))
+                oriented_bound = -signed_bound if model.sense == 'max' else signed_bound
+                exact_bound = oriented_bound+Fraction.from_float(float(constant))
+                best_bound = math.nextafter(float(exact_bound),
+                                            math.inf if model.sense == 'max' else -math.inf)
+                if not math.isfinite(objective) or not math.isfinite(best_bound):
+                    raise OverflowError('original objective or outward dual bound is nonfinite')
+            except (OverflowError, ValueError, TypeError) as error:
+                # 原线性部分有限不代表加回大常数后仍能在 binary64 表示；
+                # 有界结果若上溢，保留数值失败，不把 Inf 或异常冒充最优。
+                return Result(
+                    status=Status.NUMERICAL_ERROR, solver_name=info.name,
+                    solver_version=info.version, objective=None, best_bound=None,
+                    mip_gap=None, values={}, runtime=runtime, node_count=0,
+                    iteration_count=int(outcome.iterations),
+                    primal_residual=residuals.constraint, bound_residual=residuals.bound,
+                    integrality_residual=residuals.integrality,
+                    termination_reason=f'original LP result cannot be represented in binary64: {error}',
+                    metadata=metadata)
             if not residuals.is_feasible:
                 return Result(
                     status=Status.NUMERICAL_ERROR, solver_name=info.name,
@@ -170,11 +217,12 @@ class NativeSimplexBackend:
                     metadata=metadata)
             return Result(
                 status=Status.OPTIMAL, solver_name=info.name, solver_version=info.version,
-                objective=objective, best_bound=objective, mip_gap=0.0, values=values,
+                objective=objective, best_bound=best_bound, mip_gap=None, values=values,
                 runtime=runtime, node_count=0, iteration_count=int(outcome.iterations),
                 primal_residual=residuals.constraint, bound_residual=residuals.bound,
                 integrality_residual=residuals.integrality,
-                termination_reason=('optimal basis with reduced costs verified by an independent '
+                termination_reason=(outcome.message if posthoc.get('accepted') else
+                                    'optimal basis with reduced costs verified by an independent '
                                     'KKT certificate in original units'),
                 metadata=metadata)
         except MemoryError as error:

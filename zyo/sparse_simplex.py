@@ -14,7 +14,7 @@ Two linear-system operations are required by the revised simplex method:
 
 ``B`` is refactorised periodically by sparse LU. Between refactorisations the
 factorisation is updated through a *product form* (eta file): each pivot appends one
-sparse vector and one pivot position, and any solve applies those updates in the
+update vector and one pivot position, and any solve applies those updates in the
 correct order. This replaces the rank-one update of a dense factorisation while
 keeping the update algebra explicit and independently checkable.
 
@@ -25,10 +25,12 @@ recorded. The default gate preserves the original RHS-relative criterion; a stri
 componentwise criterion is available explicitly for research ablations.
 """
 from dataclasses import asdict, dataclass, field
+from fractions import Fraction
 import math
 import operator
 
 import numpy as np
+from scipy.linalg.blas import daxpy
 from scipy.sparse import csc_matrix, diags, hstack, identity
 from scipy.sparse.linalg import splu
 
@@ -42,30 +44,28 @@ DEFAULT_MAX_ETA = 200
 DEFAULT_RESIDUAL_TOL = 1e-9
 DEFAULT_REFINEMENT_STEPS = 2
 # 定价规则切换门：先用 Dantzig，枢轴数超过 DEFAULT_BLAND_AFTER 或连续 DEFAULT_STALL_AFTER
-# 次枢轴毫无进展时**永久**改用 Bland 规则。Bland 规则的有限终止保证依赖"最终一直用它"，
-# 因此切换不可逆；两个门都是"何时开始用它"的触发条件，不改变保证本身。
+# 次枢轴毫无进展时**永久**改用最小下标入基规则。换出规则与浮点运算
+# 尚不满足完整 Bland 定理前提；切换不可逆只保持确定性，不保证有限终止。
 DEFAULT_BLAND_AFTER = 1000
 DEFAULT_STALL_AFTER = 100
 
 
 @dataclass
 class BasisUpdate:
-    """One product-form pivot update.
+    """一次乘积形式基更新。
 
-    After the pivot, ``B_new = B_old + (a - B e_p) e_p'`` with ``a`` the entering
-    column. Writing ``eta = B_old^{-1} a``, the inverse updates as
+    换基后 ``B_new = B_old + (a - B e_p) e_p'``，其中 ``a`` 是入基列。
+    记 ``eta = B_old^{-1} a``，则逆矩阵按下式更新：
 
         ``B_new^{-1} = (I - (eta - e_p) e_p' / eta_p) B_old^{-1}``,
 
-    so the stored vector is the normalised product-form column
-    ``gamma = (eta - e_p) / eta_p`` (with ``gamma_p = (eta_p - 1)/eta_p``).
-    Applying one update to a vector ``y`` shifted by the pivot position ``p`` is then
-    ``y -= gamma * y[p]``.
+    归一化列 ``gamma = (eta - e_p) / eta_p`` 仅供已有诊断读取；FTRAN/BTRAN
+    先按等价的 eta 主元除法计算，避免主元坐标的大数相减。
     """
 
     pivot: int          # 换入列在基中的位置（0-based）
-    gamma: np.ndarray   # 归一化乘积形式列 (eta - e_p) / eta_p
-    eta: np.ndarray     # 原始 FTRAN 列 B_old^{-1} a，保留以备诊断
+    gamma: np.ndarray   # 归一化列只供现有剖析读数；求解运算改用稳定 eta 式
+    eta: np.ndarray     # 原始 FTRAN 列 B_old^{-1} a，供稳定更新及诊断
     entering: int       # 换入列在 A 中的全局列号
     leaving: int        # 换出列在 A 中的全局列号
 
@@ -123,6 +123,9 @@ class SparseBasis:
             raise ValueError('Basis size must equal the number of rows')
         if len(set(self.basic)) != len(self.basic):
             raise ValueError('Basis contains duplicate columns')
+        # SciPy 用 Python 列表切取十万级基列时，每次都会逐项解析索引。
+        # 基索引数组与列表只在枢轴处同步，供装配和目标系数切片重复使用。
+        self._basic_indices = np.asarray(self.basic, dtype=np.intp)
         self.residual_tol = float(residual_tol)
         if not math.isfinite(self.residual_tol) or self.residual_tol <= 0:
             raise ValueError('residual_tol must be finite and positive')
@@ -139,13 +142,16 @@ class SparseBasis:
         self.state = BasisState()
         self._factorization = None
         self._basis_matrix = None
+        # 残差复核在相邻枢轴间使用同一个 B；缓存只服务线性代数，不能改变换基决策。
+        self._residual_basis_matrix = None
+        self._residual_abs_basis_matrix = None
         self.refactorise()
 
     # ---------- 基矩阵装配与分解 ----------
 
     def assemble(self):
         """Current ``B`` as a CSC matrix, columns in the order of ``self.basic``."""
-        return csc_matrix(self.matrix[:, self.basic])
+        return csc_matrix(self.matrix[:, self._basic_indices])
 
     def refactorise(self):
         """Rebuild the LU factors of the current basis and drop the update chain."""
@@ -160,6 +166,10 @@ class SparseBasis:
             raise NumericalError('Basis LU factors contain non-finite values')
         self._factorization = factorization
         self._basis_matrix = matrix
+        self._residual_basis_matrix = matrix
+        # LAPACK DGERFS 的分量后向误差分母为 |op(B)| |y|+|rhs|；
+        # 同一基的正反回代可复用 |B|，转置时仅取其转置，换基后必须失效。
+        self._residual_abs_basis_matrix = abs(matrix)
         self.updates = []
         self.state.eta_count = 0
         self.state.refactorisations += 1
@@ -199,12 +209,20 @@ class SparseBasis:
         if not transpose:
             solution = self._factorization.solve(rhs)
             for update in self.updates:
-                solution -= update.gamma*solution[update.pivot]
+                # E 的主元列为 eta。先直接除得新主元，再对其余行做 DAXPY；
+                # 不用 y[p]-(1-1/eta[p])*y[p] 的灾难性相消式。
+                pivot_value = float(solution[update.pivot]/update.eta[update.pivot])
+                solution = daxpy(update.eta, solution, a=-pivot_value)
+                solution[update.pivot] = pivot_value
             return solution
         solution = rhs.copy()
-        # 后向应用同一链的转置：y[p] -= gamma' y，等价于先更新再消去。
+        # E^{-T} 的主元为 (y[p]-sum_{i != p} eta[i]*y[i])/eta[p]；
+        # 排除主元后分别点积，避免先形成含主元的大和再相减。
         for update in reversed(self.updates):
-            solution[update.pivot] -= float(update.gamma @ solution)
+            pivot = update.pivot
+            off_pivot = (float(update.eta[:pivot] @ solution[:pivot])
+                         + float(update.eta[pivot+1:] @ solution[pivot+1:]))
+            solution[pivot] = (solution[pivot]-off_pivot)/update.eta[pivot]
         solution = self._factorization.solve(solution, trans='T')
         return solution
 
@@ -219,15 +237,21 @@ class SparseBasis:
         if not np.all(np.isfinite(solution)):
             self.mark_stale('solve produced non-finite values')
             raise NumericalError('Basis solve produced non-finite values')
-        matrix = self.assemble()
+        # 每次换基后仅重建一次实际 B；FTRAN/BTRAN 的残差必须始终对当前基检验。
+        if self._residual_basis_matrix is None:
+            self._residual_basis_matrix = self.assemble()
+            self._residual_abs_basis_matrix = abs(self._residual_basis_matrix)
+        matrix = self._residual_basis_matrix
         operator = matrix.T if transpose else matrix
+        absolute_operator = (self._residual_abs_basis_matrix.T if transpose
+                             else self._residual_abs_basis_matrix)
         scale = 1.0+float(np.max(np.abs(rhs), initial=0.0))
 
         def measure(candidate):
             # 按 op(B) 的每个分量计量，防止某个大行掩盖小行；0/0 的精确零方程记零。
             with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
                 residual = rhs-operator @ candidate
-                denominator = abs(operator) @ np.abs(candidate)+np.abs(rhs)
+                denominator = absolute_operator @ np.abs(candidate)+np.abs(rhs)
                 ratios = np.divide(np.abs(residual), denominator,
                                    out=np.zeros_like(residual), where=denominator > 0.)
             if (not np.all(np.isfinite(residual))
@@ -305,6 +329,9 @@ class SparseBasis:
         self.updates.append(BasisUpdate(pivot=int(position), gamma=gamma, eta=column.copy(),
                                         entering=int(entering), leaving=int(leaving_column)))
         self.basic[position] = int(entering)
+        self._basic_indices[position] = int(entering)
+        self._residual_basis_matrix = None
+        self._residual_abs_basis_matrix = None
         self.state.pivots_since_refactor += 1
         self.state.eta_count = len(self.updates)
         return self
@@ -347,13 +374,13 @@ class SparseBasis:
         cost = np.asarray(costs, dtype=float).reshape(-1)
         if cost.size != self.matrix.shape[1]:
             raise ValueError('Cost vector has the wrong length')
-        dual = self.btran(cost[self.basic])
+        dual = self.btran(cost[self._basic_indices])
         return cost - self.matrix.T @ dual
 
     def dual_values(self, costs):
         """``y = BTRAN(c_B)`` for the current basis."""
         cost = np.asarray(costs, dtype=float).reshape(-1)
-        return self.btran(cost[self.basic])
+        return self.btran(cost[self._basic_indices])
 
 
 def extract_basis(matrix, *, tolerance=1e-9):
@@ -406,6 +433,8 @@ class SimplexResult:
     basis_diagnostics: dict = field(default_factory=dict)
     bound_flips: int = 0
     iteration_budget: dict = field(default_factory=dict)
+    phase_one_candidate: np.ndarray | None = None
+    unpriced_optimality: bool = False
 
 
 def _iteration_budget(value):
@@ -446,10 +475,18 @@ def _bound_side_after_placement(value, lower, upper):
     variable ends on the *other* side from the one the ratio test recorded. Writing the
     flag from stale bookkeeping makes the next pricing step choose the wrong direction.
     """
+    # 极窄盒两端都可能落入同一个绝对贴界容差。精确落界先于近似判定，
+    # 否则精确下界会被错标为上界（反之亦然），导致定价方向翻转。
+    if math.isfinite(lower) and value == lower:
+        return False
+    if math.isfinite(upper) and value == upper:
+        return True
     at_lower = math.isfinite(lower) and abs(value-lower) <= 1e-12
     at_upper = math.isfinite(upper) and abs(value-upper) <= 1e-12
     if at_lower and at_upper:
-        return False          # 固定变量：按下界处理，方向由目标符号决定
+        # 同时近界但均非精确界时，无法从值确定非基状态；不可任意猜一侧。
+        raise NumericalError(f'Placed value {value} ambiguously matches both bounds '
+                             f'({lower}, {upper})')
     if at_upper:
         return True
     if at_lower:
@@ -474,13 +511,197 @@ def _advance_basic_values(values, basic_indices, moving, step):
     values[basic_indices] -= step*moving
 
 
+def _finite_bound_room(bound, current, direction):
+    """通常走 binary64；有限数相减上溢时按原 binary64 值精确求商。"""
+    bound, current, direction = float(bound), float(current), float(direction)
+    if not all(math.isfinite(value) for value in (bound, current, direction)) or direction == 0:
+        raise NumericalError('Basic blocking ratio has non-finite input or zero direction')
+    span = bound-current
+    if math.isfinite(span):
+        return span/direction
+    # 异常路径很少触发：不能把两个有限数的上溢差误当作无穷阻挡。
+    exact = ((Fraction.from_float(bound)-Fraction.from_float(current))
+             /Fraction.from_float(direction))
+    try:
+        return float(exact)
+    except OverflowError:
+        return math.inf if exact > 0 else -math.inf
+
+
+def _ratio_limit_scalar(basic, moving, values, lower, upper, pricing_tolerance,
+                        *, feasibility_tolerance=None):
+    """取严格最小比例；显式提供可行容差时审查负比例的退化路径。"""
+    step = math.inf
+    limiting = -1
+    limiting_upper = False
+    unrepresentable_positive_blocker = False
+    negative_room = []
+    for position, j in enumerate(basic):
+        d = -moving[position]
+        # 无论 d 多小，只要非零且沿该方向移动，足够大的步长仍会触及有限界。
+        # 定价阈值仅决定是否入基；比例检验必须按真实方向维护原始可行性。
+        if d > 0.0 and math.isfinite(upper[j]):
+            room = _finite_bound_room(upper[j], values[j], d)
+            if not math.isfinite(room):
+                # 正溢出比任何可表示的有限候选都晚；若没有别的候选则不能宣告无界。
+                if room > 0:
+                    unrepresentable_positive_blocker = True
+                    continue
+                raise NumericalError('Finite basic upper blocker has an invalid ratio')
+            if room < 0.0 and feasibility_tolerance is not None:
+                negative_room.append((j, d, upper[j]))
+                continue
+            # 比例差不能直接作为行可行容差：1e-12 的步长差乘以 1e12
+            # 的方向分量，会使其他基本变量越界 1 个原模型单位。
+            if room < step or (room == step and limiting >= 0
+                               and j < basic[limiting]):
+                step, limiting, limiting_upper = room, position, True
+        elif d < 0.0 and math.isfinite(lower[j]):
+            room = _finite_bound_room(lower[j], values[j], d)
+            if not math.isfinite(room):
+                if room > 0:
+                    unrepresentable_positive_blocker = True
+                    continue
+                raise NumericalError('Finite basic lower blocker has an invalid ratio')
+            if room < 0.0 and feasibility_tolerance is not None:
+                negative_room.append((j, d, lower[j]))
+                continue
+            if room < step or (room == step and limiting >= 0
+                               and j < basic[limiting]):
+                step, limiting, limiting_upper = room, position, False
+    if limiting < 0 and unrepresentable_positive_blocker:
+        raise NumericalError('Finite basic blocker ratio exceeds binary64 range')
+    if negative_room:
+        # 负比例来自当前基本量微越界，不存在合法的负步长。若直接截为零却保留
+        # 离基位置，近零方向会成为病态主元。只在另一个真实有限阻挡点已确定、
+        # 且起点和该点上的微越界都未超过既定原可行容差时，才忽略伪阻挡。
+        # 无下一阻挡点时不能借此声称改善射线；真实正比值的小方向始终参与。
+        if limiting < 0 or not math.isfinite(step):
+            raise NumericalError('Negative basic ratio has no checked finite alternative')
+        for j, d, bound in negative_room:
+            proposed = values[j]+d*step
+            if d > 0.0:
+                start_error = values[j]-bound
+                end_error = proposed-bound
+            else:
+                start_error = bound-values[j]
+                end_error = bound-proposed
+            if (not math.isfinite(proposed) or not math.isfinite(start_error)
+                    or not math.isfinite(end_error)
+                    or start_error > feasibility_tolerance
+                    or end_error > feasibility_tolerance):
+                raise NumericalError('Negative basic ratio cannot be covered by the '
+                                     'existing primal feasibility tolerance')
+    return step, limiting, limiting_upper
+
+
+def _ratio_limit_vectorized(basic, moving, values, lower, upper, pricing_tolerance,
+                            *, feasibility_tolerance=None):
+    """非零方向均参与阻挡；默认直调保留历史纯比例口径。"""
+    indices = np.asarray(basic, dtype=np.intp)
+    direction = -np.asarray(moving, dtype=float)
+    bound_upper = upper[indices]
+    bound_lower = lower[indices]
+    current = values[indices]
+    # 与标量回退保持同一物理判据；不复用简约成本的 pricing_tolerance。
+    upper_candidate = (direction > 0.0) & np.isfinite(bound_upper)
+    lower_candidate = (direction < 0.0) & np.isfinite(bound_lower)
+    candidate = upper_candidate | lower_candidate
+    if not np.any(candidate):
+        return math.inf, -1, False
+    rooms = np.full(indices.size, math.inf)
+    with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
+        rooms[upper_candidate] = ((bound_upper[upper_candidate]-current[upper_candidate])
+                                  /direction[upper_candidate])
+        rooms[lower_candidate] = ((bound_lower[lower_candidate]-current[lower_candidate])
+                                  /direction[lower_candidate])
+    finite_rooms = rooms[candidate]
+    if not np.all(np.isfinite(finite_rooms)):
+        return _ratio_limit_scalar(basic, moving, values, lower, upper, pricing_tolerance,
+                                   feasibility_tolerance=feasibility_tolerance)
+    if np.any(finite_rooms < 0.0):
+        return _ratio_limit_scalar(basic, moving, values, lower, upper, pricing_tolerance,
+                                   feasibility_tolerance=feasibility_tolerance)
+    if finite_rooms.size > 1:
+        two_smallest = np.partition(finite_rooms, 1)[:2]
+        if two_smallest[1]-two_smallest[0] <= 1e-12:
+            return _ratio_limit_scalar(basic, moving, values, lower, upper, pricing_tolerance,
+                                       feasibility_tolerance=feasibility_tolerance)
+    position = int(np.argmin(rooms))
+    return float(rooms[position]), position, bool(upper_candidate[position])
+
+
+def _weak_pivot_refine_needed(moving, limiting, threshold):
+    """仅判断已选离基主元相对 FTRAN 最大分量是否弱；不改变比例规则。"""
+    direction = np.asarray(moving, dtype=float)
+    if limiting < 0 or limiting >= direction.size or not np.all(np.isfinite(direction)):
+        return False
+    scale = float(np.max(np.abs(direction), initial=0.))
+    return bool(scale > 0 and abs(float(direction[limiting]))/scale < threshold)
+
+
+def _stable_zero_ratio_choice(basic, moving, values, lower, upper, selected,
+                              feasibility_tolerance, pricing_tolerance, *, use_bland):
+    """仅在舍入级零步长并列中选择较大主元；不允许正步跨过任何边界。"""
+    step, old_position, old_upper = selected
+    if use_bland or old_position < 0 or step >= 0:
+        return selected
+    indices = np.asarray(basic, dtype=np.intp)
+    direction = -np.asarray(moving, dtype=float)
+    current = np.asarray(values, dtype=float)[indices]
+    lower_values = np.asarray(lower, dtype=float)[indices]
+    upper_values = np.asarray(upper, dtype=float)[indices]
+    machine_epsilon = np.finfo(float).eps
+
+    def boundary(position):
+        d = float(direction[position])
+        if d > pricing_tolerance and math.isfinite(upper_values[position]):
+            return float(upper_values[position]), True
+        if d < -pricing_tolerance and math.isfinite(lower_values[position]):
+            return float(lower_values[position]), False
+        return None, False
+
+    old_bound, _ = boundary(old_position)
+    if old_bound is None:
+        return selected
+    old_gap = abs(old_bound-current[old_position])
+    old_roundoff = min(feasibility_tolerance,
+                       8*machine_epsilon*max(1.0, abs(old_bound),
+                                              abs(float(current[old_position]))))
+    if old_gap > old_roundoff:
+        return selected
+    # 已观测的 ratio<=0 在外层本就裁为零；这里所有候选都只执行零步换基。
+    # 使用绝对边界差而非 room，可避免 1 ULP 除以微小方向后伪装成远离零的最小比值。
+    best = old_position
+    best_magnitude = abs(float(direction[old_position]))
+    best_upper = old_upper
+    for position in range(indices.size):
+        bound, on_upper = boundary(position)
+        if bound is None:
+            continue
+        roundoff = min(feasibility_tolerance,
+                       8*machine_epsilon*max(1.0, abs(bound), abs(float(current[position]))))
+        if abs(bound-current[position]) > roundoff:
+            continue
+        magnitude = abs(float(direction[position]))
+        if (magnitude > best_magnitude
+                or (magnitude == best_magnitude and indices[position] < indices[best])):
+            best, best_magnitude, best_upper = position, magnitude, on_upper
+    return (0.0, int(best), bool(best_upper))
+
+
 def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
                     iteration_limit=20000, pricing_tolerance=1e-9,
                     feasibility_tolerance=1e-7, residual_tol=DEFAULT_RESIDUAL_TOL,
                     refactor_interval=DEFAULT_REFACTOR_INTERVAL, max_eta=DEFAULT_MAX_ETA,
                     objective_offset=0.0, maximize=False, bland_after=DEFAULT_BLAND_AFTER,
                     stall_after=DEFAULT_STALL_AFTER, initial=None,
-                    refinement_steps=DEFAULT_REFINEMENT_STEPS, residual_metric='rhs'):
+                    refinement_steps=DEFAULT_REFINEMENT_STEPS, residual_metric='rhs',
+                    _phase_one_structural_columns=None, stable_zero_pivot=False,
+                    integer_zero_refine=False, integer_zero_refine_weak_threshold=None,
+                    integer_exact_snap=False,
+                    positive_step_pricing=False,
+                    positive_step_scan_after=100, positive_step_scan_every=100):
     """Primal revised simplex for ``min c'x`` s.t. ``Ax = 0``, ``l <= x <= u``.
 
     Computational form follows Huangfu & Hall §2.1 (arXiv:1503.01889v1): row bounds are
@@ -490,11 +711,12 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
 
     Robustness choices, each deliberate:
 
-    * **Dantzig pricing with a permanent switch to Bland's rule.** Bland's rule guarantees
-      finite termination under degeneracy but prices poorly, so it is entered only when it is
-      needed: after ``bland_after`` pivots, or after ``stall_after`` consecutive pivots that
-      made no progress (zero step, so no objective change). Once entered the switch is
-      permanent, which is what preserves the termination guarantee. An earlier revision
+    * **Dantzig pricing with a permanent switch to Bland-style least-index pricing.**
+      Exact Bland entering/leaving rules are finite in exact arithmetic. This numerical
+      implementation uses floating tolerances in the ratio test, so that theorem is not
+      claimed as a finite-runtime guarantee here. The switch happens after
+      ``bland_after`` pivots or ``stall_after`` consecutive zero steps and stays active.
+      An earlier revision
       defaulted ``bland_after`` to 0, i.e. Bland from the very first pivot; the measured cost
       on the public Netlib development set was 3.3x the pivots on ``adlittle`` (558 vs 168,
       0.296 s vs 0.089 s) and 1.7x on ``afiro``, for identical certified optima
@@ -514,6 +736,21 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
     caller can decide between a cold start and Phase-I.
     """
     iteration_limit = _iteration_budget(iteration_limit)
+    if integer_exact_snap and not integer_zero_refine:
+        raise ValueError('integer_exact_snap requires integer_zero_refine')
+    if integer_zero_refine_weak_threshold is not None and not integer_zero_refine:
+        raise ValueError('integer_zero_refine_weak_threshold requires integer_zero_refine')
+    if (integer_zero_refine_weak_threshold is not None
+            and (isinstance(integer_zero_refine_weak_threshold, bool)
+                 or not isinstance(integer_zero_refine_weak_threshold, (int, float))
+                 or not math.isfinite(integer_zero_refine_weak_threshold)
+                 or not 0 < integer_zero_refine_weak_threshold <= 1)):
+        raise ValueError('weak pivot threshold must be finite and in (0, 1]')
+    for label, value, minimum in (
+            ('positive_step_scan_after', positive_step_scan_after, 0),
+            ('positive_step_scan_every', positive_step_scan_every, 1)):
+        if isinstance(value, bool) or not isinstance(value, (int, np.integer)) or value < minimum:
+            raise ValueError(f'{label} must be an integer at least {minimum}')
 
     def stopped_before_updates(state, **fields):
         # 分解后拒绝起点也有真实工作；成功LU次数来自快照，不把零动作误当零计算。
@@ -522,11 +759,34 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
 
     matrix = csc_matrix(matrix)
     rows, columns = matrix.shape
+    # NaN/Inf 系数不能参与最优性/无界性证明；先拒绝非法输入，
+    # 否则 NaN 的比较结果为假，可能把零动作点误晋升为 OPTIMAL。
+    if not np.all(np.isfinite(matrix.data)):
+        raise ValueError('finite matrix coefficients required')
+    if _phase_one_structural_columns is not None:
+        if (isinstance(_phase_one_structural_columns, bool)
+                or not isinstance(_phase_one_structural_columns, (int, np.integer))
+                or not 0 < _phase_one_structural_columns < columns):
+            raise ValueError('Phase-I structural column count must be inside the matrix')
+        phase_original = matrix[:, :_phase_one_structural_columns]
+    else:
+        phase_original = None
     cost = np.asarray(costs, dtype=float).reshape(-1)
     lower = np.asarray(bounds_lower, dtype=float).reshape(-1)
     upper = np.asarray(bounds_upper, dtype=float).reshape(-1)
     if cost.size != columns or lower.size != columns or upper.size != columns:
         raise ValueError('Cost and bound vectors must match the number of columns')
+    if not np.all(np.isfinite(cost)):
+        raise ValueError('finite cost coefficients required')
+    if not math.isfinite(objective_offset):
+        raise ValueError('finite objective offset required')
+    if (np.any(np.isnan(lower)) or np.any(np.isnan(upper))
+            or np.any(np.isposinf(lower)) or np.any(np.isneginf(upper))):
+        raise ValueError('invalid variable bound: NaN or wrong-side infinity')
+    for label, tolerance in (('pricing_tolerance', pricing_tolerance),
+                             ('feasibility_tolerance', feasibility_tolerance)):
+        if not math.isfinite(tolerance) or tolerance < 0:
+            raise ValueError(f'finite nonnegative tolerance required: {label}')
     if np.any(lower > upper):
         return stopped_before_updates('INFEASIBLE', message='A variable lower bound exceeds its upper bound')
     direction = -1.0 if maximize else 1.0
@@ -568,15 +828,16 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
                                  phase_one=dict(free_columns=free_columns),
                                  basis_diagnostics=diagnostics())
         if j in given:
-            at_lower = math.isfinite(lower[j]) and abs(values[j]-lower[j]) <= 1e-12
-            at_upper[j] = bool(math.isfinite(upper[j]) and not at_lower
-                               and abs(values[j]-upper[j]) <= 1e-12)
-            if not at_lower and not at_upper[j]:
+            try:
+                at_upper[j] = _bound_side_after_placement(values[j], lower[j], upper[j])
+            except NumericalError:
                 return stopped_before_updates(
                     'NUMERICAL_ERROR',
-                    message=f'Nonbasic variable {j} starts strictly inside its bounds '
+                    message=f'Nonbasic variable {j} does not select an unambiguous bound '
                             f'({lower[j]}, {upper[j]}); a bounded-variable basis needs a bound',
                     basis_diagnostics=diagnostics())
+            # 调用方给出近界值时落实为真实界，维持非基变量精确贴界的不变量。
+            values[j] = upper[j] if at_upper[j] else lower[j]
         elif math.isfinite(upper[j]) and upper[j] != lower[j]:
             values[j], at_upper[j] = upper[j], True
         else:
@@ -639,8 +900,21 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
     bound_flips = 0
     completed = 0
     stalled = 0
+    stable_zero_choices = 0
+    integer_refine_attempts = 0
+    integer_refine_choices = 0
+    integer_refine_weak_skips = 0
+    integer_refine_last_rejection = None
+    integer_snap_attempts = 0
+    integer_snap_choices = 0
+    integer_snap_last_rejection = None
+    positive_step_scans = 0
+    positive_step_scanned_columns = 0
+    positive_step_choices = 0
+    positive_step_last_rejection = None
     status = 'ITERATION_LIMIT'
     message = 'Iteration limit reached before optimality was proved'
+    unpriced_optimality = False
     for iteration in range(iteration_limit+1):
         completed = iteration
         if basis.needs_refactorisation():
@@ -648,8 +922,9 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
         # 基变量值必须满足 A x = 0，且在**每次基/非基状态变化之后**重算：非基变量被置于
         # 某一侧界（翻界、换出落界只记状态），沿用旧值会让方程残差停在错误位置，实测
         # 表现为步长恒为 0 的零进展循环。
-        # 本轮基更新前不变：只转换一次有序下标，复用于掩码、取值和基值维护。
-        basic_indices = np.asarray(basis.basic, dtype=np.intp)
+        # SparseBasis 在成功换基时同步维护有序 intp 下标；本轮直接复用，
+        # 避免每次把大基列表重新解析为数组。换基后的下一轮会读取已更新的缓存。
+        basic_indices = basis._basic_indices
         in_basis = np.zeros(columns, dtype=bool)
         in_basis[basic_indices] = True
         # 基变量值由非基值唯一确定。原先这里每轮构造一个 `{j: values[j] for j in
@@ -664,6 +939,18 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
             status = 'NUMERICAL_ERROR'
             message = f'refactorisation did not restore the basis: {error}'
             break
+        if phase_original is not None:
+            # Phase-I 只需找到原模型可行点；当每个人工量已接近零时才做较贵的
+            # 原结构行/界复核。通过后保留专用状态，由调用方驱除残余人工基。
+            artificial = values[_phase_one_structural_columns:]
+            if np.all(np.isfinite(artificial)) and float(np.max(np.abs(artificial), initial=0.0)) \
+                    <= feasibility_tolerance:
+                check = _phase_one_primal_check(matrix, phase_original, values, lower,
+                                                upper, feasibility_tolerance)
+                if check['internal_primal_feasible']:
+                    status = 'PHASE_ONE_FEASIBLE'
+                    message = 'Original structural point passed Phase-I feasibility gates'
+                    break
         # 每轮由**实际值**重算所有非基变量的所在侧，消除标志与值的漂移。标志若与实际
         # 值不一致，定价会朝不可行方向选变量（实测在已最优点上反复选中不该选的变量）。
         # 这里同样向量化：逐列版本是 `for j in range(columns)` 外加一次 `j in basis_positions`
@@ -671,10 +958,20 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
         # 下一个热点（faulthandler 栈停在 sparse_simplex.py 的这一行）。
         # 语义保持逐列版本的三分支：非基且贴在上界 -> True；否则非基且贴在下界 -> False；
         # 基变量与两侧都不贴的变量保持原标志不变。
+        exact_lower = np.isfinite(lower) & (values == lower)
+        exact_upper = np.isfinite(upper) & (values == upper)
         snapped_upper = np.isfinite(upper) & (np.abs(values-upper) <= 1e-12)
         snapped_lower = np.isfinite(lower) & (np.abs(values-lower) <= 1e-12)
-        at_upper = np.where(~in_basis & snapped_upper, True,
-                            np.where(~in_basis & snapped_lower, False, at_upper))
+        ambiguous = (~in_basis) & (~exact_lower) & (~exact_upper) & snapped_lower & snapped_upper
+        if np.any(ambiguous):
+            status = 'NUMERICAL_ERROR'
+            message = 'A nonbasic value ambiguously matches both bounds'
+            break
+        # 精确下界/上界优先；只在精确值缺失时才容忍单侧的近界舍入。
+        at_upper = np.where(~in_basis & exact_lower, False,
+                            np.where(~in_basis & exact_upper, True,
+                                     np.where(~in_basis & snapped_upper, True,
+                                              np.where(~in_basis & snapped_lower, False, at_upper))))
         try:
             # 对偶量只算一次：reduced_costs 内部本来也要做一次 BTRAN，与 dual_values 完全重复。
             # 现在用 r = c − A'y 的定义式直接算简约成本（同一次已验证的 BTRAN + 一次稀疏乘法），
@@ -691,8 +988,9 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
             # 基变量上的简约成本本应为零；超门说明当前分解/更新链不可信，标记陈旧让下一轮重建。
             basis.mark_stale(f'basic reduced costs are not zero (max {basic_reduced:.3e})')
 
-        # 定价。Dantzig 取最改进者；枢轴数超门或连续多轮无进展后**永久**改用 Bland 最小下标
-        # 规则，后者在退化下保证有限终止，因此循环不可能被静默接受。
+        # 定价。Dantzig 取最改进者；枢轴数超门或连续多轮无进展后**永久**改用最小下标。
+        # 精确 Bland 规则有有限性定理，但当前浮点容差与近并列处理不能直接继承该证明；
+        # 达到迭代额度仍如实返回 ITERATION_LIMIT，绝不据切换本身推断最优。
         # 固定变量（上下界相等）作为非基变量时**不能移动**，其简约成本的符号不构成最优性
         # 条件，因此一律不参与定价；若把它当成可动变量，比例检验会算出零步长并在两个界
         # 之间反复翻转（实测在把等式行写成固定逻辑变量的模型上会空转到迭代上限）。
@@ -718,7 +1016,20 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
         if entering < 0:
             violation = _primal_violation(values, lower, upper, feasibility_tolerance)
             if violation <= feasibility_tolerance:
-                status, message = 'OPTIMAL', 'Reduced costs proved optimality for the current basis'
+                # 定价门是选列阈值，不是严格最优证书：微小简约成本可乘以巨大
+                # 可行步长，形成显著目标改进；无穷界时甚至可能无界。没有额外
+                # 证书就保守保留当前候选，不将其升级为 OPTIMAL。
+                unpriced = (~in_basis) & (~fixed) & (improving > 0.0)
+                if np.any(unpriced):
+                    status = 'NUMERICAL_ERROR'
+                    # 仅此分支可由原域独立证书尝试恢复；其他数值故障不能
+                    # 依赖消息文本相似性而被事后误认成可认证的停止。
+                    unpriced_optimality = True
+                    message = (f'{int(np.count_nonzero(unpriced))} improving nonbasic '
+                               'reduced costs were below the pricing threshold; '
+                               'the current basis does not certify optimality')
+                else:
+                    status, message = 'OPTIMAL', 'Reduced costs proved optimality for the current basis'
             else:
                 status = 'NUMERICAL_ERROR'
                 message = f'No entering column but primal violation {violation:.3e} remains'
@@ -728,11 +1039,18 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
         if completed >= iteration_limit:
             break
 
-        pivot_column = basis.ftran(matrix[:, entering].toarray().ravel(), validate=False)
+        try:
+            # 入基方向直接决定比例检验和新基；必须先对当前 B 验证，失败时只重分解一次。
+            # 跳过此门会把含显著残差的 eta_p 当主元，使本来满秩的旧基换成数值奇异基。
+            entering_rhs = matrix[:, entering].toarray().ravel()
+            pivot_column = guarded(lambda: basis.ftran(entering_rhs, validate=True))
+        except NumericalError as error:
+            status = 'NUMERICAL_ERROR'
+            message = f'validated pivot direction did not recover after refactorisation: {error}'
+            break
         # 沿"变量上升"为正方向；非基变量只能离开它当前所在的界。
         sign = -1.0 if at_upper[entering] else 1.0
         moving = sign*pivot_column
-        # 比例检验：先看基本变量能走多远。记录限制变量触到的是哪一侧界——换出后必须
         # 比例检验：先看基本变量能走多远。记录限制变量触到的是哪一侧界——换出后必须
         # 精确落在**实际触到的那个界**上；用"最近界"会把变量放到它并未触到的界上。
         # 关键符号：moving = sign * B^{-1}a 是入基变量沿自身可行方向上升时，基本变量
@@ -740,33 +1058,198 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
         # 的基本变量会下降、才可能先触下界；判据若直接用 moving[i] 会把方向判反，
         # 表现为步长恒为 0。教科书参考实现 `zyo/standard_simplex.py` 用同一符号约定
         # 通过了手算题（两次枢轴、目标 −5）。
-        step = math.inf
-        limiting = -1
-        limiting_upper = False
-        for position, j in enumerate(basis.basic):
-            d = -moving[position]
-            if d > pricing_tolerance and math.isfinite(upper[j]):
-                room = (upper[j]-values[j])/d
-                # 并列时取变量下标更小者，使退化路径确定（Bland 式 tie-break）。
-                if room < step-1e-12 or (abs(room-step) <= 1e-12 and limiting >= 0
-                                         and j < basis.basic[limiting]):
-                    step, limiting, limiting_upper = room, position, True
-            elif d < -pricing_tolerance and math.isfinite(lower[j]):
-                room = (lower[j]-values[j])/d
-                if room < step-1e-12 or (abs(room-step) <= 1e-12 and limiting >= 0
-                                         and j < basis.basic[limiting]):
-                    step, limiting, limiting_upper = room, position, False
+        # 明显唯一的最小比例走 NumPy 快路径；退化近并列回退严格最小比的标量规则。
+        try:
+            step, limiting, limiting_upper = _ratio_limit_vectorized(
+                basic_indices, moving, values, lower, upper, pricing_tolerance)
+        except NumericalError as error:
+            status = 'NUMERICAL_ERROR'
+            message = f'physical ratio test failed before any state update: {error}'
+            break
+        positive_choice = None
+        if (positive_step_pricing and phase_original is None
+                and step <= pricing_tolerance and stalled >= positive_step_scan_after
+                and (stalled-positive_step_scan_after) % positive_step_scan_every == 0):
+            # Positive Edge 文献强调非退化改进的价值；这里是代价更高的确定性筛选，
+            # 先用新 LU 估步，再用现有内核 FTRAN/比例门复核，不能把估计直接当求解动作。
+            from .positive_step_pricing import screen_positive_step
+            positive_step_scans += 1
+            scan = screen_positive_step(
+                matrix=matrix, basic=basic_indices, eligible=eligible,
+                improving=improving, at_upper=at_upper, values=values,
+                lower=lower, upper=upper, pricing_tolerance=pricing_tolerance,
+                minimum_step=feasibility_tolerance)
+            positive_step_scanned_columns += scan['scanned_columns']
+            if scan['accepted']:
+                proposed = scan['column']
+                try:
+                    proposed_rhs = matrix[:, proposed].toarray().ravel()
+                    proposed_pivot = guarded(lambda: basis.ftran(proposed_rhs, validate=True))
+                except NumericalError as error:
+                    # 备选列失败不等于已验证的普通列失败；重分解后重新验证普通方向。
+                    positive_step_last_rejection = f'alternative FTRAN failed: {error}'
+                    try:
+                        pivot_column = guarded(lambda: basis.ftran(entering_rhs, validate=True))
+                    except NumericalError as ordinary_error:
+                        status = 'NUMERICAL_ERROR'
+                        message = f'ordinary direction also failed after alternative rejection: {ordinary_error}'
+                        break
+                    moving = sign*pivot_column
+                    try:
+                        step, limiting, limiting_upper = _ratio_limit_vectorized(
+                            basic_indices, moving, values, lower, upper, pricing_tolerance)
+                    except NumericalError as ordinary_error:
+                        status = 'NUMERICAL_ERROR'
+                        message = (f'ordinary physical ratio failed after alternative '
+                                   f'rejection: {ordinary_error}')
+                        break
+                else:
+                    proposed_sign = -1.0 if at_upper[proposed] else 1.0
+                    proposed_moving = proposed_sign*proposed_pivot
+                    try:
+                        proposed_step, proposed_limit, proposed_upper = _ratio_limit_vectorized(
+                            basic_indices, proposed_moving, values, lower, upper,
+                            pricing_tolerance)
+                    except NumericalError as error:
+                        # 备选列的算术失败只否决该提议；普通列的已核比例保持不变。
+                        positive_step_last_rejection = f'alternative physical ratio failed: {error}'
+                    else:
+                        proposed_room = (values[proposed]-lower[proposed] if proposed_sign < 0
+                                         else upper[proposed]-values[proposed])
+                        if min(proposed_step, proposed_room) > feasibility_tolerance:
+                            entering, entering_rhs, pivot_column = proposed, proposed_rhs, proposed_pivot
+                            sign, moving = proposed_sign, proposed_moving
+                            step, limiting, limiting_upper = (proposed_step, proposed_limit,
+                                                              proposed_upper)
+                            positive_choice = scan
+                            positive_step_choices += 1
+                        else:
+                            positive_step_last_rejection = 'fresh-LU positive estimate failed native FTRAN/ratio gate'
+            else:
+                positive_step_last_rejection = scan['reason']
+        integer_choice = None
+        used_integer_snap = False
+        refine_this_pivot = (integer_zero_refine and phase_original is None
+                             and step <= pricing_tolerance)
+        if (refine_this_pivot and integer_zero_refine_weak_threshold is not None
+                and not _weak_pivot_refine_needed(
+                    moving, limiting, integer_zero_refine_weak_threshold)):
+            # 阈值仅减少可选高精度试验的触发次数；未触发时严格沿用原比值结果。
+            integer_refine_weak_skips += 1
+            refine_this_pivot = False
+        if refine_this_pivot:
+            # 只在整数系数及非基整数边界可证明生成精确整数 RHS 时采用额外精度；
+            # 普通 LP/Phase-I 不变，所选离基值还须几乎精确在原界上，不能暗中扩可行域。
+            from .primal_integer_zero_refine import (refine_integer_basic,
+                                                     strong_zero_leaving)
+            integer_refine_attempts += 1
+            integer_snap_attempts += int(integer_exact_snap)
+            try:
+                refined = refine_integer_basic(
+                    matrix, basic_indices, nonbasic_values,
+                    exact_integer_snap=integer_exact_snap,
+                    basic_lower=lower[basic_indices] if integer_exact_snap else None,
+                    basic_upper=upper[basic_indices] if integer_exact_snap else None,
+                    feasibility_tolerance=feasibility_tolerance if integer_exact_snap else None)
+                if refined['accepted']:
+                    snapped = bool(refined.get('integer_exact_snap_accepted'))
+                    if integer_exact_snap and not snapped:
+                        integer_snap_last_rejection = refined['integer_exact_snap_reason']
+                    # 整数点通过 Bq=b 后仍需原行、原界和原 FTRAN 方向门；
+                    # 若新点被任一旧门拒绝，保留原额外精度候选的既有路径。
+                    candidates = [(snapped, refined['values'])]
+                    if snapped:
+                        candidates.append((False, refined['unsnapped_values']))
+                    for using_snap, candidate_values in candidates:
+                        candidate = np.asarray(candidate_values, dtype=float)
+                        trial_values = values.copy()
+                        trial_values[basic_indices] = candidate
+                        row_error = float(np.max(np.abs(matrix @ trial_values), initial=0.))
+                        row_gate = feasibility_tolerance*(1.+float(np.max(np.abs(trial_values), initial=0.)))
+                        if row_error <= row_gate:
+                            integer_choice = strong_zero_leaving(
+                                basic=basic_indices, moving=moving, values=candidate,
+                                lower=lower[basic_indices], upper=upper[basic_indices],
+                                feasibility_tolerance=feasibility_tolerance,
+                                pricing_tolerance=pricing_tolerance)
+                            if integer_choice['accepted']:
+                                values[basic_indices] = candidate
+                                step = integer_choice['step']
+                                limiting = integer_choice['position']
+                                limiting_upper = integer_choice['leaving_upper']
+                                integer_refine_choices += 1
+                                integer_snap_choices += int(using_snap)
+                                used_integer_snap = using_snap
+                                break
+                            rejection = integer_choice['reason']
+                        else:
+                            rejection = 'refined basic point failed original equation gate'
+                        integer_refine_last_rejection = rejection
+                        if using_snap:
+                            integer_snap_last_rejection = rejection
+                else:
+                    integer_refine_last_rejection = refined['reason']
+                    if integer_exact_snap:
+                        integer_snap_last_rejection = refined['reason']
+            except (ArithmeticError, ValueError, RuntimeError) as error:
+                # 算术失败不晋升状态；实验臂回到原比值并在末端保留拒绝原因。
+                integer_refine_last_rejection = f'{type(error).__name__}: {error}'
+                if integer_exact_snap:
+                    integer_snap_last_rejection = integer_refine_last_rejection
+        if stable_zero_pivot and phase_original is None and step < 0 and not use_bland:
+            ordinary_choice = (step, limiting, limiting_upper)
+            step, limiting, limiting_upper = _stable_zero_ratio_choice(
+                basic_indices, moving, values, lower, upper, ordinary_choice,
+                feasibility_tolerance, pricing_tolerance, use_bland=use_bland)
+            stable_zero_choices += int(limiting != ordinary_choice[1])
+        if step < 0.0:
+            # 可选整数精确基点门先有机会把舍入残差修正为真实零步；若仍为
+            # 负比例，则必须在任何状态更新之前核对另一阻挡点与既定可行容差。
+            try:
+                step, limiting, limiting_upper = _ratio_limit_scalar(
+                    basic_indices, moving, values, lower, upper, pricing_tolerance,
+                    feasibility_tolerance=feasibility_tolerance)
+            except NumericalError as error:
+                status = 'NUMERICAL_ERROR'
+                message = f'physical ratio test failed before any state update: {error}'
+                break
         # 再看入基变量自身的另一侧界：先触到它即为翻界，不换基。
         flip_room = math.inf
+        finite_flip_bound = False
         if sign > 0 and math.isfinite(upper[entering]):
-            flip_room = upper[entering]-values[entering]
+            finite_flip_bound = True
+            flip_room = _finite_bound_room(upper[entering], values[entering], 1.0)
         elif sign < 0 and math.isfinite(lower[entering]):
-            flip_room = values[entering]-lower[entering]
+            finite_flip_bound = True
+            flip_room = _finite_bound_room(lower[entering], values[entering], -1.0)
         if not math.isfinite(step) and not math.isfinite(flip_room):
-            status = 'UNBOUNDED'
-            message = 'No bound limits the step; the objective improves without limit'
+            # 两个有限端点的跨度也可能在 binary64 上溢；这种情形没有无界射线证书。
+            status = 'NUMERICAL_ERROR' if finite_flip_bound else 'UNBOUNDED'
+            message = ('Finite entering bound step exceeds binary64 range'
+                       if finite_flip_bound else
+                       'No bound limits the step; the objective improves without limit')
             break
         step = max(0.0, min(step, flip_room))
+
+        # 动作前只复核会变化的基本量与入基量；比例检验或备选策略若漏掉
+        # 微小但非零的方向，不允许先污染状态、再指望终点证书发现越界。
+        # 此检查使用原变量的绝对可行容差，不把定价阈值当作物理界容差。
+        basic_array = np.asarray(basic_indices, dtype=np.intp)
+        with np.errstate(over='ignore', invalid='ignore'):
+            proposed_basic = values[basic_array]-step*moving
+            proposed_entering = values[entering]+sign*step
+            basic_violation = np.maximum(lower[basic_array]-proposed_basic,
+                                         proposed_basic-upper[basic_array])
+        if (not math.isfinite(step) or not math.isfinite(proposed_entering)
+                or not np.all(np.isfinite(proposed_basic))
+                or float(np.max(basic_violation, initial=0.0)) > feasibility_tolerance
+                or (math.isfinite(lower[entering])
+                    and lower[entering]-proposed_entering > feasibility_tolerance)
+                or (math.isfinite(upper[entering])
+                    and proposed_entering-upper[entering] > feasibility_tolerance)):
+            status = 'NUMERICAL_ERROR'
+            message = 'Proposed simplex step violates a finite variable bound'
+            break
 
         values[entering] += sign*step
         # 基本变量按 x_B(α) = x_B(0) − moving·α **减去**移动量：由 A x = 0 得
@@ -778,12 +1261,25 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
                             limiting_position=int(limiting), reduced=float(reduced[entering]),
                             objective=float(internal_cost @ values),
                             pricing_rule='bland' if use_bland else 'dantzig'))
+        if positive_choice is not None:
+            history[-1].update(positive_step_pricing=True,
+                               screened_columns=positive_choice['scanned_columns'])
+        if integer_zero_refine and integer_choice and integer_choice.get('accepted'):
+            history[-1].update(integer_zero_refine=True,
+                               selected_pivot_magnitude=integer_choice['pivot_magnitude'],
+                               bound_snap_change=integer_choice['snap_change'])
+            if used_integer_snap:
+                history[-1]['integer_exact_snap'] = True
         # 迭代是实际已执行状态更新，零步长与翻界同样计入，不能只数下一轮检查或换基。
         completed += 1
         # 停滞计数：退化枢轴（步长为零）不改变目标值，长串零步长正是循环的前兆。
-        # 它与枢轴数门一起触发"永久改用 Bland"，因此终止性保证不受影响。
+        # 这只改变入基选择；离基及浮点并列未满足完整 Bland 定理前提，
+        # 因此不得据此声称有限终止。
         stalled = stalled+1 if step <= pricing_tolerance else 0
-        if flip_room <= step+pricing_tolerance and flip_room < math.inf:
+        # 翻界只在入基变量确实先触界（或严格同一步长）时成立。
+        # 若仅因定价容差把稍大的 flip_room 当并列，强行落界的偏差会经
+        # 大矩阵系数放大，导致原行或基本变量界严重失准。
+        if flip_room <= step and flip_room < math.inf:
             # 翻界：入基变量到达另一侧界，基不变。
             snapped, on_upper = _nearest_bound(values[entering], lower[entering], upper[entering])
             values[entering] = snapped
@@ -850,11 +1346,35 @@ def revised_simplex(matrix, costs, bounds_lower, bounds_upper, *, basic=None,
                                                        or stalled >= stall_after) else 'dantzig',
                                       bland_after=int(bland_after), stall_after=int(stall_after),
                                       pivots=int(pivots), stalled_final=int(stalled),
+                                      stable_zero_pivot=bool(stable_zero_pivot),
+                                      stable_zero_choices=int(stable_zero_choices),
+                                      **(dict(positive_step_pricing=True,
+                                              positive_step_scans=int(positive_step_scans),
+                                              positive_step_scanned_columns=int(positive_step_scanned_columns),
+                                              positive_step_choices=int(positive_step_choices),
+                                              positive_step_last_rejection=positive_step_last_rejection)
+                                         if positive_step_pricing else {}),
+                                      **(dict(integer_zero_refine=True,
+                                              integer_zero_refine_weak_threshold=(
+                                                  None if integer_zero_refine_weak_threshold is None
+                                                  else float(integer_zero_refine_weak_threshold)),
+                                              integer_zero_refine_weak_skips=int(integer_refine_weak_skips),
+                                              integer_zero_refine_attempts=int(integer_refine_attempts),
+                                              integer_zero_refine_choices=int(integer_refine_choices),
+                                              integer_zero_refine_last_rejection=integer_refine_last_rejection)
+                                         if integer_zero_refine else {}),
+                                      **(dict(integer_exact_snap=True,
+                                              integer_exact_snap_attempts=int(integer_snap_attempts),
+                                              integer_exact_snap_choices=int(integer_snap_choices),
+                                              integer_exact_snap_last_rejection=integer_snap_last_rejection)
+                                         if integer_exact_snap else {}),
                                       switched=bool(pivots >= bland_after
                                                     or stalled >= stall_after)),
                          refactor_retries=int(refactor_retries),
                          basis_diagnostics=diagnostics(), bound_flips=bound_flips,
-                         iteration_budget=_budget_record(iteration_limit, completed))
+                         iteration_budget=_budget_record(iteration_limit, completed),
+                         unpriced_optimality=bool(status == 'NUMERICAL_ERROR'
+                                                  and unpriced_optimality))
 
 
 def _primal_violation(values, lower, upper, tolerance):
@@ -865,6 +1385,27 @@ def _primal_violation(values, lower, upper, tolerance):
         if math.isfinite(upper[index]):
             violation = max(violation, values[index]-upper[index])
     return float(max(0.0, violation))
+
+
+def _phase_one_primal_check(wide, original, values, lower, upper, tolerance):
+    """独立于辅助目标检查原结构行、界、人工量及扩展方程。"""
+    point = np.asarray(values, dtype=float).reshape(-1)
+    structural_columns = original.shape[1]
+    if point.size != wide.shape[1] or not np.all(np.isfinite(point)):
+        return dict(internal_primal_feasible=False, reason='nonfinite or mismatched point')
+    structural = point[:structural_columns]
+    artificial = point[structural_columns:]
+    row_error = float(np.max(np.abs(original @ structural), initial=0.0))
+    augmented_error = float(np.max(np.abs(wide @ point), initial=0.0))
+    bound_error = _primal_violation(structural, lower[:structural_columns],
+                                    upper[:structural_columns], tolerance)
+    artificial_error = float(np.max(np.abs(artificial), initial=0.0))
+    accepted = max(row_error, augmented_error, bound_error,
+                   artificial_error) <= tolerance
+    return dict(internal_primal_feasible=bool(accepted),
+                structural_row_residual=row_error, augmented_row_residual=augmented_error,
+                structural_bound_violation=bound_error, artificial_max_abs=artificial_error,
+                tolerance=float(tolerance), original_domain_optimality_certified=False)
 
 
 def _dual_violation(reduced, values, lower, upper, basic, tolerance):
@@ -887,6 +1428,15 @@ def _dual_violation(reduced, values, lower, upper, basic, tolerance):
         elif not at_lower and not at_upper:
             violation = max(violation, abs(r))
     return float(violation)
+
+
+def _phase_two_nonbasic_initial(values, basis):
+    """从 Phase-I 可行点提取非基界位；基集合只构造一次。"""
+    # 旧写法在字典推导式条件里调用 set(basis)，每处理一列都重建约 m 项集合。
+    # 对 n 列、m 行是 O(nm) 的纯 Python 过渡成本；预构造后为 O(n+m)，
+    # 下标遍历顺序和每个浮点值均与原写法保持一致，不改变单纯形决策。
+    basic_members = set(basis)
+    return {j: float(value) for j, value in enumerate(values) if j not in basic_members}
 
 def solve_lp(matrix, costs, bounds_lower, bounds_upper, *, maximize=False,
              objective_offset=0.0, feasibility_tolerance=1e-7, basic=None,
@@ -981,11 +1531,15 @@ def solve_lp(matrix, costs, bounds_lower, bounds_upper, *, maximize=False,
     if phase is None:
         # 子阶段预算停止不是数值故障；人工目标不能上报成原LP目标。
         state = 'ITERATION_LIMIT' if phase_record.get('status') == 'ITERATION_LIMIT' else 'NUMERICAL_ERROR'
+        # 只传递经过原齐次行/界复核的中间点；不伪造一个无人工列的基，也不改变停止状态。
+        phase_candidate = phase_record.pop('stopped_feasible_candidate', None)
         return finish(SimplexResult(state, message=phase_record.get('reason', 'Phase-I could not establish a basis'),
                              phase_one=phase_record, iterations=phase_record.get('iterations', 0),
                              pivots=phase_record.get('pivots', 0),
                              bound_flips=phase_record.get('bound_flips', 0),
-                             refactorisations=phase_record.get('refactorisations', 0)),
+                             refactorisations=phase_record.get('refactorisations', 0),
+                             phase_one_candidate=(None if phase_candidate is None else
+                                                  np.asarray(phase_candidate, dtype=float))),
                       phase_one_steps=phase_record.get('iterations', 0))
     if phase != 'FEASIBLE':
         return finish(SimplexResult('INFEASIBLE', message='Phase-I proved the rows are infeasible',
@@ -1000,8 +1554,7 @@ def solve_lp(matrix, costs, bounds_lower, bounds_upper, *, maximize=False,
     phase_two['iteration_limit'] = budget-phase_record['iterations']
     values = phase_record.get('values')
     if values is not None:
-        phase_two['initial'] = {j: float(v) for j, v in enumerate(values)
-                                if j not in set(phase_record['basis'])}
+        phase_two['initial'] = _phase_two_nonbasic_initial(values, phase_record['basis'])
     elif initial is not None:
         phase_two['initial'] = initial
     result = revised_simplex(matrix, cost, lower, upper, basic=phase_record['basis'],
@@ -1012,6 +1565,12 @@ def solve_lp(matrix, costs, bounds_lower, bounds_upper, *, maximize=False,
     result.pivots += phase_record['pivots']
     result.bound_flips += phase_record['bound_flips']
     result.refactorisations += phase_record['refactorisations']
+    if (result.status != 'OPTIMAL'
+            and phase_record.get('original_feasible_check', {}).get('internal_primal_feasible')
+            and values is not None):
+        # 第二阶段数值失败/限额不得抹去已核验的第一阶段可行点；与正式解、
+        # 第二阶段当前基及最优性证书分开保存，后续仍须回原输入再验。
+        result.phase_one_candidate = np.asarray(values, dtype=float)
     return finish(result, phase_one_steps=phase_record['iterations'])
 
 
@@ -1042,18 +1601,20 @@ def _crash_start(matrix, lower, upper, placement):
                                   body.indices[body.indptr[single]].tolist(),
                                   body.data[body.indptr[single]].tolist()):
         if abs(abs(value)-1.0) <= 1e-12:
-            candidates.setdefault(int(row), []).append((int(column), float(np.sign(value))))
+            candidates.setdefault(int(row), []).append((int(column), float(value), float(np.sign(value))))
     if not candidates:
         return None
     start = placement.copy()
+    # 单位列只影响自己的唯一非零行；前面已选列不会改变后续候选行的活动量。
+    # 一次稀疏乘法得到原始行活动量，避免逐候选行切片及稠密化。
+    original_activity = np.asarray(body @ placement, dtype=float).reshape(-1)
     chosen = {}
     used_columns = set()
     for row in sorted(candidates):
-        coefficients = np.asarray(body[row, :].todense()).ravel()
-        for column, sign in candidates[row]:
+        for column, coefficient, sign in candidates[row]:
             if column in used_columns:
                 continue
-            others = float(coefficients @ start)-coefficients[column]*start[column]
+            others = float(original_activity[row]-coefficient*placement[column])
             value = -others/sign
             if lower[column]-1e-12 <= value <= upper[column]+1e-12:
                 chosen[row] = (column, float(value))
@@ -1063,11 +1624,15 @@ def _crash_start(matrix, lower, upper, placement):
     if not chosen:
         return None
     activity = np.asarray(body @ start, dtype=float).reshape(-1)
-    artificial_rows = [row for row in range(rows) if row not in chosen]
+    artificial_rows = []
     basis_offset = []
     for row in range(rows):
-        basis_offset.append(chosen[row][0] if row in chosen
-                            else columns+artificial_rows.index(row))
+        if row in chosen:
+            basis_offset.append(chosen[row][0])
+        else:
+            # 人工列按出现次序编号，避免对人工行列表重复线性搜索。
+            basis_offset.append(columns+len(artificial_rows))
+            artificial_rows.append(row)
     total = float(np.sum(np.abs(activity[artificial_rows]))) if artificial_rows else 0.0
     return dict(initial={j: float(start[j]) for j in range(columns)}, basis_offset=basis_offset,
                 artificial_rows=artificial_rows, activity=total, logical_rows=sorted(chosen))
@@ -1098,8 +1663,9 @@ def _phase_one(matrix, lower, upper, rows, columns, *, feasibility_tolerance=1e-
     The starting basis has two variants (see :func:`_crash_start`): "plain" gives every row an
     artificial, and the "logical-first crash" lets a unit column satisfy its own row when it can,
     so those rows need none. ``phase_one_crash`` selects between them: ``None`` (default) takes the
-    crash only when it strictly reduces the initial artificial activity, ``True``/``False`` force
-    the choice. The auto rule is measured, not assumed — see :func:`_crash_start`.
+    crash when it strictly reduces the initial artificial activity; at equal activity it also
+    selects crash when the artificial columns avoided exceed the update budget. ``True``/``False``
+    force the choice. The equal-activity rule is a measured budget heuristic, not a convergence proof.
 
     Returns ``('FEASIBLE', record)``, ``('INFEASIBLE', record)`` or ``(None, record)``.
     The record always carries the initial basis and the artificial objective so the
@@ -1129,20 +1695,31 @@ def _phase_one(matrix, lower, upper, rows, columns, *, feasibility_tolerance=1e-
     # 界内，它就能直接当该行的**基本**变量，该行不需要人工变量；基仍是 ±I（每行一个 ±1 单位
     # 列）故非奇异，起点也自动可行（基本列取界内值、其余行人工取 |r_i| ≥ 0、非基列停在界上）。
     #
-    # **触发规则来自实测而不是直觉**：只在 crash **严格降低**初始人工不可行量时采用它。
+    # **触发规则来自实测而不是直觉**：优先按初始人工目标严格下降选 crash。
     # 六个实例的对照（docs/research/probe_crash_vs_current.py）显示收益并不一边倒——
     # sct2 由"数值失败、目标 451479"变为目标 68.5，fhnw-binpack4-4 枢轴 948→637，roll3000
     # 目标 12333→10627；但 neos-3381206-awhea 反而从 2035 涨到 2719 枢轴，而它恰好也是
     # 初始不可行量**没有下降**的那一题（1313→1313）；air05 完全无变化（426→426）。
+    # 人工目标相等时只在省去的人工基列数超过本次全部换基额度时选 crash：大题 plain 起点
+    # 的 106954 个人工基列使前 3000 步全部零步，而 crash 仅需 232 个、1531 步找到可行点；
+    # awhea 的 479/4 列虽同目标，但省去 475 小于 5000 额度，继续保留较快的 plain。
+    # 这是资源相关启发式而非普遍速度保证；其他实例仍需同预算消融与独立检查。
     # 21 个可构造实例的覆盖面测量（probe_crash_trigger_coverage.py）：18 个触发，
     # 触发案例的不可行量降幅中位数 85.3%，其中 neos-2987310-joes 从 1.566e9 降到 0。
     crash = _crash_start(matrix, lower, upper, placement)
+    if phase_one_crash is True and crash is None:
+        # 显式消融不能把不可用的 crash 静默替换为 plain，否则结果标签会误导比较。
+        raise ValueError('Forced Phase-I logical-first crash is unavailable for this matrix')
+    budget = _iteration_budget(kwargs.get('iteration_limit', 20000))
+    budget_tie = (crash is not None
+                  and abs(crash['activity']-plain_activity) <= 1e-12
+                  and rows-len(crash['artificial_rows']) > budget)
     if phase_one_crash is True:
         use_crash = crash is not None
     elif phase_one_crash is False:
         use_crash = False
     else:
-        use_crash = crash is not None and crash['activity'] < plain_activity-1e-12
+        use_crash = crash is not None and (crash['activity'] < plain_activity-1e-12 or budget_tie)
     if crash is None:
         chosen = dict(initial={j: float(placement[j]) for j in range(columns)},
                       basis_offset=None, artificial_rows=list(range(rows)),
@@ -1151,7 +1728,9 @@ def _phase_one(matrix, lower, upper, rows, columns, *, feasibility_tolerance=1e-
     elif use_crash:
         chosen = dict(initial=crash['initial'], basis_offset=crash['basis_offset'],
                       artificial_rows=crash['artificial_rows'], activity=crash['activity'],
-                      strategy='logical-first crash (strictly lower initial artificial activity)'
+                      strategy=('logical-first crash (budget-aware equal artificial activity)'
+                                if budget_tie and phase_one_crash is None else
+                                'logical-first crash (strictly lower initial artificial activity)')
                       if phase_one_crash is None else 'logical-first crash (forced)')
     else:
         chosen = dict(initial={j: float(placement[j]) for j in range(columns)},
@@ -1185,7 +1764,8 @@ def _phase_one(matrix, lower, upper, rows, columns, *, feasibility_tolerance=1e-
     placement_initial = chosen['initial']
     status = revised_simplex(wide, wide_cost, wide_lower, wide_upper, basic=start_basis,
                              initial=placement_initial,
-                             feasibility_tolerance=feasibility_tolerance, **kwargs)
+                             feasibility_tolerance=feasibility_tolerance,
+                             _phase_one_structural_columns=(columns if artificial else None), **kwargs)
     record = dict(used=True, status=status.status, artificial_objective=status.objective,
                   artificial_columns=artificial, artificial_signs=[float(s) for s in sigma],
                   start_strategy=chosen['strategy'],
@@ -1198,24 +1778,33 @@ def _phase_one(matrix, lower, upper, rows, columns, *, feasibility_tolerance=1e-
                   cleanup_refactorisations=0,
                   basis_diagnostics=status.basis_diagnostics,
                   refactor_retries=status.refactor_retries)
-    if status.status != 'OPTIMAL':
+    record['feasibility_found_before_auxiliary_optimum'] = status.status == 'PHASE_ONE_FEASIBLE'
+    if status.status not in ('OPTIMAL', 'PHASE_ONE_FEASIBLE'):
+        if status.status == 'ITERATION_LIMIT' and status.values is not None:
+            # 辅助问题尚未证明最优，仍可独立检查其结构部分是否已满足原齐次行和界。
+            # 数值异常状态不走此路径，人工目标近零也不单独作为可行依据。
+            check = _phase_one_primal_check(wide, matrix, status.values,
+                                            wide_lower, wide_upper, feasibility_tolerance)
+            record['stopped_candidate_check'] = check
+            if check['internal_primal_feasible']:
+                record['stopped_feasible_candidate'] = np.asarray(status.values[:columns]).tolist()
         record['reason'] = 'Phase-I did not reach optimality'
         return None, record
     total = float(np.sum(status.values[columns:]))
     record['artificial_sum'] = total
-    if total > max(feasibility_tolerance, 1e-9)*(1.0+float(np.max(np.abs(status.values), initial=0.0))):
+    if (status.status == 'OPTIMAL'
+            and total > max(feasibility_tolerance, 1e-9)*(
+                1.0+float(np.max(np.abs(status.values), initial=0.0)))):
         record['reason'] = 'Phase-I optimum leaves positive artificial activity'
         return 'INFEASIBLE', record
     # Phase-I 最优时人工变量取零，但可能仍留在基里。必须把它们换成结构列，
     # 否则第二阶段拿不到 m 列的合法基。残留且找不到非零枢轴的行即冗余行。
     #
-    # 驱除判据是**精确**的：人工列是 σ_i e_i 且位于基的第 position 位，故
-    #   B e_position = σ_i e_i  =>  e_position^T B^{-1} = σ_i e_i^T
-    #   (B^{-1} A[:, j])_position = e_position^T B^{-1} A[:, j] = σ_i A[i, j]
-    # 也就是说"第 i 行结构系数非零"的列恰好能在该位置形成非零枢轴。早期版本改用
-    # btran(e_i) 的**第 j 个分量**判据，那对应 B^{-1} 的第 i 行而不是枢轴所在位置，
-    # 与所需条件不符（只是碰巧在首列为非零时选中 j=0）。
-    sparse_rows = csc_matrix(matrix).tocsr()
+    # 真正的驱除枢轴是 e_position^T B^{-1} A[:,j]。
+    # B 的人工列为 σ_i e_i 只说明 B^{-1}e_i=σ_i e_position（逆矩阵的列），
+    # 并不能推出 e_position^T B^{-1}=σ_i e_i^T（逆矩阵的行）。
+    # 因此先 BTRAN 得到逆基第 position 行，再乘原结构矩阵并剔除现有基列。
+    structural = csc_matrix(matrix)
     basis = list(status.basic)
     drive_out = []
     guard = 0
@@ -1228,27 +1817,27 @@ def _phase_one(matrix, lower, upper, rows, columns, *, feasibility_tolerance=1e-
         if position is None:
             break
         artificial_column = basis[position]
-        row_index = artificial_column-columns
-        coefficients = np.asarray(sparse_rows[row_index, :columns].todense()).ravel()
-        chosen = None
-        for j in range(columns):
-            if j in basis or abs(coefficients[j]) <= 1e-9:
-                continue
-            chosen = j
-            break
-        if chosen is None:
-            record['reason'] = 'row is redundant; artificial variable cannot be driven out'
-            record['redundant_basis_position'] = position
-            return None, record
-        pivot_value = sigma[row_index]*float(coefficients[chosen])
-        if abs(pivot_value) <= 1e-12:
-            record['reason'] = 'drive-out pivot is numerically zero'
-            return None, record
         current = SparseBasis(wide, basis)
         # 清理每次重建的成功LU也是实际成本，含额度耗尽或零枢轴退出前已完成的工作。
         before_update = current.state.refactorisations
         record['refactorisations'] += before_update
         record['cleanup_refactorisations'] += before_update
+        selector = np.zeros(rows, dtype=float)
+        selector[position] = 1.0
+        try:
+            multiplier = current.btran(selector)
+        except NumericalError as error:
+            record['reason'] = f'drive-out transpose basis solve failed: {error}'
+            return None, record
+        transformed = np.asarray(structural.T @ multiplier, dtype=float).reshape(-1)
+        eligible = np.isfinite(transformed) & (np.abs(transformed) > 1e-9)
+        eligible[np.asarray([j for j in basis if j < columns], dtype=int)] = False
+        if not np.any(eligible):
+            record['reason'] = 'row is redundant; artificial variable cannot be driven out'
+            record['redundant_basis_position'] = position
+            return None, record
+        scores = np.where(eligible, np.abs(transformed), -np.inf)
+        chosen = int(np.argmax(scores))
         column = current.ftran(wide[:, chosen].toarray().ravel(), validate=False)
         if abs(column[position]) <= 1e-12:
             record['reason'] = 'drive-out pivot is numerically zero'
@@ -1268,6 +1857,12 @@ def _phase_one(matrix, lower, upper, rows, columns, *, feasibility_tolerance=1e-
         basis = list(current.basic)
         drive_out.append(dict(position=position, artificial=int(artificial_column),
                               replaced_by=int(chosen), pivot=float(column[position])))
+    check = _phase_one_primal_check(wide, matrix, status.values,
+                                    wide_lower, wide_upper, feasibility_tolerance)
+    record['original_feasible_check'] = check
+    if not check['internal_primal_feasible']:
+        record['reason'] = 'Phase-I exit point failed the original structural gates'
+        return None, record
     record['basis'] = basis
     record['drive_out'] = drive_out
     # Phase-I 结束时人工变量全为 0（否则已判 INFEASIBLE），因此结构部分就是原系统的一个

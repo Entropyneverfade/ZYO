@@ -1,5 +1,15 @@
 # 版本记录 / Changelog
 
+## 0.3.7 本地发布候选 — 2026-10-05 / Local release candidate
+
+- 原始模型证书按存储 binary64 数重新核查行活动、目标、简约成本与对偶差；补充乘积抵消、非有限中间量及无界改善方向手算反例。
+- 稀疏原始单纯形对微小未定价改善保留真实数值状态，修正极窄盒界侧与微小负比值的受检选行；≤8 行原生基有理乘子仅经独立原模型证书通过后形成公共后验认证。
+- CSC/CSR 重复系数在齐次原生模型和证书中采用一致汇总，保持调用方输入不变；新增相应公开手算测试、逐路径许可登记和随版两张数值反例图。
+
+English: recomputed original-model row, objective, reduced-cost and gap products from stored binary64 inputs; retained honest native stops for tiny unpriced improvements; checked narrow-bound and tiny-negative-ratio decisions; added a bounded exact-basis posthoc witness with independent original-model certification; made duplicate sparse coordinates semantically consistent without mutating caller input; registered the new analytic tests and two version-specific figures in the screened-release scope.
+
+[0.3.7 输入、公式、两图和复现 / Inputs, formulae, figures and reproduction](docs/releases/0.3.7.md).
+
 ## 0.3.6 文本修订 — 2026-09-29 / Report revision
 
 公开小结与结果说明采用匿名化测试环境表述，保留模型、资源预算、版本和实测指标；

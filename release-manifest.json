@@ -1,11 +1,11 @@
 {
   "schema": "zyo-public-files-1",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "files": [
     {
       "path": ".gitattributes",
-      "bytes": 193,
-      "sha256": "d12e5c014280a704b180ea2ac1696deed575e2b2b6ad6dfe0c090f01056ebd62"
+      "bytes": 1810,
+      "sha256": "91aa30e61bfd562ed9ae46dd383973f59a7cb64be97ed65ca341021fc7613fff"
     },
     {
       "path": ".github/ISSUE_TEMPLATE/zyo-test.yml",
@@ -19,8 +19,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 19454,
-      "sha256": "ad6c081c9742d8a78e213425890b7648347ff1b2009491fbd04094d768886453"
+      "bytes": 20740,
+      "sha256": "dc42cc74e9433029f4c334cb4c51c40d3ab27c7f8c5db62acd89eeab30a2d4a5"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -34,8 +34,8 @@
     },
     {
       "path": "LICENSE-SCOPE.json",
-      "bytes": 5827,
-      "sha256": "82becc22e2082aefec7189a58898c92636ac03ba6f9991e849101cbc0a0e054e"
+      "bytes": 7337,
+      "sha256": "e72c098fee7ee90f00fe394549c7acca6aa4840db9ef1ad1c0ccb146583c70bc"
     },
     {
       "path": "LICENSES/MIT-BASELINE.json",
@@ -49,13 +49,13 @@
     },
     {
       "path": "MANIFEST.in",
-      "bytes": 876,
-      "sha256": "04c10c2ce86b61497771293c30ddf38cd6fbf3e90ca0ee07c9d48ac1809a43c1"
+      "bytes": 956,
+      "sha256": "7f91346406c1f7222d9be5e00ca5816b3eb86b98124eb230c7da38ab46c6adb3"
     },
     {
       "path": "README.md",
-      "bytes": 14634,
-      "sha256": "320b31d7dabe28cea125d39aaed28eb4af198c2b2bc8a8ece15493a5fa8b0025"
+      "bytes": 16978,
+      "sha256": "264b161f938579109e0ba7f821595fa73ad2b646f55ac515b88b87b028984690"
     },
     {
       "path": "THIRD_PARTY.md",
@@ -70,7 +70,7 @@
     {
       "path": "_zyo_version.py",
       "bytes": 178,
-      "sha256": "ceed9cfeb6f2dbe89e0d713f217b11cf2f7acdca664f633cbd209029e26e90fe"
+      "sha256": "a66e22c75ea6756baa4babfbb012326bec7cdbbf48b841841b01535a10835707"
     },
     {
       "path": "docs/API-TERMS.md",
@@ -163,6 +163,46 @@
       "sha256": "aea3e3d5014df40bdabb25ba9ee7bb4c06c9fcef26562eaf19646c60884661ef"
     },
     {
+      "path": "docs/figures/0.3.7/Fig01_Cancellation/images/Fig01_Cancellation.svg",
+      "bytes": 14777,
+      "sha256": "a8400709fc2f8ef23f7c6a465326fc0bf119044070633f5558d6364b788311c6"
+    },
+    {
+      "path": "docs/figures/0.3.7/Fig01_Cancellation/qa/figure_qa.json",
+      "bytes": 2249,
+      "sha256": "7aadf4623a9478feb10b57b6675771dfdb01a9c9c45ec5089d053ff35317bf51"
+    },
+    {
+      "path": "docs/figures/0.3.7/Fig01_Cancellation/scripts/render.py",
+      "bytes": 9612,
+      "sha256": "b124ed1148881902061decb9082668d0f7acc77128891959f387058d21e85029"
+    },
+    {
+      "path": "docs/figures/0.3.7/Fig01_Cancellation/source_data/analytic_rows.csv",
+      "bytes": 629,
+      "sha256": "1a9e5058288e5bdfa230ec467fb012f4d7332e445de66dfd061ee4e3f437f20d"
+    },
+    {
+      "path": "docs/figures/0.3.7/Fig01_UnpricedNarrow/images/Fig01_UnpricedNarrow.svg",
+      "bytes": 28509,
+      "sha256": "4e3bf8dc57a6d1f30020dfd8e19eb20e1cbb910c1ca87f7135eebcc245462c9b"
+    },
+    {
+      "path": "docs/figures/0.3.7/Fig01_UnpricedNarrow/qa/figure_qa.json",
+      "bytes": 2147,
+      "sha256": "bcc45a8ee374e838cb64ebfd98ac2b7f9bf083834eceb2f9eb7de524144e82c3"
+    },
+    {
+      "path": "docs/figures/0.3.7/Fig01_UnpricedNarrow/scripts/render.py",
+      "bytes": 10320,
+      "sha256": "cdeb8f8729ba04b197a30c7bc8365a3e48a24a886d7672a1af72d61fd72446bd"
+    },
+    {
+      "path": "docs/figures/0.3.7/Fig01_UnpricedNarrow/source_data/analytic_cost_paths.csv",
+      "bytes": 959,
+      "sha256": "cfcb58245ae1bf38b506b7ee4a4e6eee2eae6daf93fbd1c6234f8d92533ad2c4"
+    },
+    {
       "path": "docs/figures/uc_comparison.csv",
       "bytes": 365,
       "sha256": "c0c5588f5682ada6df00f408b515a1e5d5cef661d7bfe6aa0fd206fbced77dbe"
@@ -184,13 +224,13 @@
     },
     {
       "path": "docs/licensing-and-access.md",
-      "bytes": 6658,
-      "sha256": "2abc99ca6b9e10f950783ac8834d4a1325bf7c42f13b9446cd15fe1efd634962"
+      "bytes": 6674,
+      "sha256": "09095044c5c77d6e130839533e4a4ce23473cbbd135d6f27a471c138d6fb8295"
     },
     {
       "path": "docs/limitations.md",
-      "bytes": 8730,
-      "sha256": "95e4c2647221c16e36d7c05554aa2a60cb9cc204f305493fd618225d67b2890f"
+      "bytes": 9149,
+      "sha256": "f1a543c32b3672d64e72a71ef7cb5e8bf1f57c9e381f55f45061c7fb09bc765f"
     },
     {
       "path": "docs/mps.md",
@@ -199,13 +239,13 @@
     },
     {
       "path": "docs/native_simplex.md",
-      "bytes": 4991,
-      "sha256": "0e4bb3c017a87cbba0668ff20d9a2a601f11a66394005b62456e7b31fe8bf4df"
+      "bytes": 7514,
+      "sha256": "198d1bda32543ee9bc391fadd5c1ea783d1d79cffbbc9615a2c3d999cdc7abfc"
     },
     {
       "path": "docs/quickstart_zh.md",
-      "bytes": 8431,
-      "sha256": "c49bd1167238fbdfedfcaba7b7be85047915dd7dee2a8ccfda1fa48ecb2154d7"
+      "bytes": 8976,
+      "sha256": "d622b66c0a6a6a0153ea9315e819ea0c9cc461314bc98832caac027cb03310b3"
     },
     {
       "path": "docs/releases/0.3.3.md",
@@ -226,6 +266,11 @@
       "path": "docs/releases/0.3.6.md",
       "bytes": 7158,
       "sha256": "4cd376b17a4f1d62c4c0ea2884ed89f20a18b315218857b50a122e8665af2f24"
+    },
+    {
+      "path": "docs/releases/0.3.7.md",
+      "bytes": 11065,
+      "sha256": "3f254084e17c45a81a06e61f608fb6028e63ff5e4a3e86b3241d94f69ae8df92"
     },
     {
       "path": "docs/sparse_reuse.md",
@@ -289,8 +334,8 @@
     },
     {
       "path": "pyproject.toml",
-      "bytes": 909,
-      "sha256": "62c3b965eee5479476ab87aec4047b5f1349b091320a8486ae5a03b95ad48352"
+      "bytes": 910,
+      "sha256": "9a681019f85b20664fd01a7aa4a256f491da6599e2a95c8b65f7419c9804c22f"
     },
     {
       "path": "tests/data/native_sparse_60.json",
@@ -318,9 +363,24 @@
       "sha256": "c9b9ba2f247fccd209ec749a8f9a2d76c9d0f0d02685df9af84e7b10cd33e319"
     },
     {
+      "path": "tests/test_exact_basis_dual.py",
+      "bytes": 4207,
+      "sha256": "34be7a589516fe203da2c49edddcf7365122ed1f5ddc01d06724c74b9bbca806"
+    },
+    {
       "path": "tests/test_lp_certificate.py",
       "bytes": 9070,
       "sha256": "cda981b8942e305b4c1da41812bae7dcc61b034bf133ce258df12370868b17e8"
+    },
+    {
+      "path": "tests/test_lp_certificate_nonfinite_product.py",
+      "bytes": 2283,
+      "sha256": "ce7fac0a284db084c986488d1d5fe6ce147ce1c617a4a5c769dacb998cd1c287"
+    },
+    {
+      "path": "tests/test_lp_certificate_product_cancellation.py",
+      "bytes": 8126,
+      "sha256": "7b802466849a85a100015e855e646443f542df7c9e955673f56327e4ceb2a631"
     },
     {
       "path": "tests/test_lp_reduction.py",
@@ -339,13 +399,38 @@
     },
     {
       "path": "tests/test_native_lp.py",
-      "bytes": 12594,
-      "sha256": "d33bd682b8ab99527ffd3ca6be3df1db79b5ea6c7a9508bf334d883a44744130"
+      "bytes": 20027,
+      "sha256": "65a62bde3459d70579ef76ca8b15ca1ba639faafced4cb32241e718fce67a232"
+    },
+    {
+      "path": "tests/test_native_lp_duplicate_entries.py",
+      "bytes": 3912,
+      "sha256": "a8ef02ead1c8aa1cff9c7d2bf13ddc636c6f2c651a57bcfe2a670ed1e398ace1"
+    },
+    {
+      "path": "tests/test_native_lp_input_domain.py",
+      "bytes": 3842,
+      "sha256": "40a79a890080a8bf73b20db9aa30b7047bc91b5eecc1ea3903201dda329f9cec"
+    },
+    {
+      "path": "tests/test_native_lp_objective_cancellation.py",
+      "bytes": 1214,
+      "sha256": "b8e7d50c479297ee3ee39bdc4f197b557a500dbde9f4a353733dc19e44b2f088"
+    },
+    {
+      "path": "tests/test_native_lp_unpriced_recovery.py",
+      "bytes": 4437,
+      "sha256": "ef601edc5eb68ee8fcba3a4a1611dffe1de03fd50735898807f22bb5e78e3e95"
     },
     {
       "path": "tests/test_native_simplex_backend.py",
-      "bytes": 11962,
-      "sha256": "60356960ef592cc0dcb63ff4ff7669de98aec861d81582cf2034e20d4d149743"
+      "bytes": 12169,
+      "sha256": "04339a0d58ee088da358b148b5471b6e5916aad1d0441dea616f391ca30a7439"
+    },
+    {
+      "path": "tests/test_native_simplex_posthoc_metadata.py",
+      "bytes": 8818,
+      "sha256": "635ce6b1b99395a748ddae8dc1df1fd97acd540123836de247989f0c22c83949"
     },
     {
       "path": "tests/test_native_sparse.py",
@@ -354,8 +439,8 @@
     },
     {
       "path": "tests/test_phase_one_crash.py",
-      "bytes": 7395,
-      "sha256": "d7f3d015866ee46e2ae74782ebf588de4f726b917398646f7f9a3847dde0e0b1"
+      "bytes": 13269,
+      "sha256": "aef07b191727fd86d0fb250bf3c39175f3dece80dfafd73518499d22cc2c2718"
     },
     {
       "path": "tests/test_power_palette.py",
@@ -368,14 +453,19 @@
       "sha256": "b77126560e3ba58a39b6dce0fcd3b858f47469a4922bd9689e4e5bab0e202b5d"
     },
     {
+      "path": "tests/test_public_sparse_ratio_degeneracy.py",
+      "bytes": 2842,
+      "sha256": "6b0f4d0fa5fb3bb7ec5f606b593b34cba7a2cb9d4c9277ba5779717ec44b2aa7"
+    },
+    {
       "path": "tests/test_simplex_budget.py",
       "bytes": 4587,
       "sha256": "5365cc3004e91d56e5306ff02f47770eac712155b762b6a0dde4c8eb7f2dc74f"
     },
     {
       "path": "tests/test_simplex_step_overhead.py",
-      "bytes": 4074,
-      "sha256": "fd420f49f31bbf60184e7cac82a847e5eaf6a2edcc59f526d62d56c5906a78aa"
+      "bytes": 4649,
+      "sha256": "def268858e2af9efc658b9f1c78fbec5e7f92cc2d6376d747ad9d65cd5e6d31e"
     },
     {
       "path": "tests/test_simplex_telemetry.py",
@@ -394,8 +484,8 @@
     },
     {
       "path": "tests/test_sparse_domains.py",
-      "bytes": 8203,
-      "sha256": "83b9b7241a6f04a117a06254cf76890188d9472ba3825f4a2e1676e38277fea3"
+      "bytes": 15315,
+      "sha256": "277d260b70f5ec808fe63cccd841928c549a43866c5e7486bf0ddd6b95012200"
     },
     {
       "path": "tests/test_sparse_infeasibility.py",
@@ -414,13 +504,28 @@
     },
     {
       "path": "tests/test_sparse_simplex_basis.py",
-      "bytes": 8505,
-      "sha256": "a2e70b7d9408d5b27e5fdf6e7c5f16fcdc1f4f68d6d9e1b5d89e5f43b27d5ab5"
+      "bytes": 14095,
+      "sha256": "5ee74e1973edef6b2ac556ba894ad00ea1e4aa51ab65135d762814ca6f3746f2"
     },
     {
       "path": "tests/test_sparse_simplex_driver.py",
-      "bytes": 25254,
-      "sha256": "e139846efce3a1e4d59061567cf023d582d990282f91553dba6272594686c8f5"
+      "bytes": 39098,
+      "sha256": "72540ac481dfafba466bac5074d656198597deb77ffa207fb591335fc1a2fc17"
+    },
+    {
+      "path": "tests/test_sparse_simplex_input_finite.py",
+      "bytes": 2829,
+      "sha256": "952e869b26c8260520f7c3ae925b5d7b0c54bc506784db2378ec3d2ba783386b"
+    },
+    {
+      "path": "tests/test_sparse_simplex_small_direction_ratio.py",
+      "bytes": 8133,
+      "sha256": "7796010c27bd603b469635ead233d992046afbc13e6e6f258084689739d78f5d"
+    },
+    {
+      "path": "tests/test_sparse_simplex_unpriced_gap.py",
+      "bytes": 3717,
+      "sha256": "84ac330d69790cfea9a365b2fb69214aac12d8cf0dbe79c9d06278756747e9eb"
     },
     {
       "path": "tests/test_standard_simplex.py",
@@ -454,13 +559,13 @@
     },
     {
       "path": "tests/test_warm_start.py",
-      "bytes": 6675,
-      "sha256": "3277aac421f4621bacda4f67941d8b78179a22d296341d4335c4e4ab2637b752"
+      "bytes": 9110,
+      "sha256": "e91fb5fc770c51f435ca6c6936590c73585a55c4188fb90bdb4dd1b356ea98ef"
     },
     {
       "path": "tests/test_zyo_imports.py",
       "bytes": 1103,
-      "sha256": "1659b027f57496d7344e2e43a261dcc38d1b0f3647a2f7ba46d7bc8d1c56decc"
+      "sha256": "3c12c2006cd8ba02342a1ab53014545d2e1e401f333f70ce72091e4b9b6c4392"
     },
     {
       "path": "tests/test_zyo_modeling.py",
@@ -513,6 +618,16 @@
       "sha256": "c695fb9973759b39d78d1eb60d7574b7643232ece687f85052478184fb9e3edc"
     },
     {
+      "path": "zyo/degenerate_basis_bridge.py",
+      "bytes": 13067,
+      "sha256": "14e1b3360b1325b82c05b02a1c068e5c8ce54079f0ef0ccc4b75dc1ff8b3ce1c"
+    },
+    {
+      "path": "zyo/degenerate_direction.py",
+      "bytes": 10804,
+      "sha256": "b4aa6bdc8aa6d3f92e2c211929e97fad90806826ff0122c33f676080fb1fa41e"
+    },
+    {
       "path": "zyo/dense_reference.py",
       "bytes": 13969,
       "sha256": "1269e73cb01a6aa11f9962c911760441711cee89f99734c4fe4b6a5ddc5f1b1b"
@@ -523,9 +638,14 @@
       "sha256": "766182ef797931111d287ed1799f8435091fa49a0a0e9422ae1a0d9eadf3c366"
     },
     {
+      "path": "zyo/exact_basis_dual.py",
+      "bytes": 6060,
+      "sha256": "0338a6dd4f6320ba6c7996cca2579f1e427c1a1309a7c7e9edecdfe0901e9982"
+    },
+    {
       "path": "zyo/lp_certificate.py",
-      "bytes": 12434,
-      "sha256": "5208c2a2caccceee9e667da3bd87a686bfa5050d0fa5e3ea19908eed2bf1e58d"
+      "bytes": 26981,
+      "sha256": "ddc3c0d679a8c7bdc639f67cc6df515305c1afad5a8035327a6eeadcd19af2d1"
     },
     {
       "path": "zyo/lp_phase_one.py",
@@ -559,13 +679,23 @@
     },
     {
       "path": "zyo/native_lp.py",
-      "bytes": 15358,
-      "sha256": "0be26976a40cf47c5f47a858f19a5c6306e0a061ab8f96d3ee4da5986270a0fc"
+      "bytes": 34591,
+      "sha256": "bd86de72f0fb095f67ae1d3b15d075e685e6b2b41a428a54c6fbf907f70f0a26"
     },
     {
       "path": "zyo/options.py",
       "bytes": 4306,
       "sha256": "8285317d44de97527b40b6fe1e4359f5328f65e99114a3be1a2dbde951d55083"
+    },
+    {
+      "path": "zyo/positive_step_pricing.py",
+      "bytes": 4353,
+      "sha256": "812482a9132671d8e1943d40f28052d1f1bf409397bcf044b500d7a271c0b8b6"
+    },
+    {
+      "path": "zyo/primal_integer_zero_refine.py",
+      "bytes": 11264,
+      "sha256": "8da745209e3e8d6d29e272820a7da3906e497db541b4257f361a7c0d5a42ba49"
     },
     {
       "path": "zyo/result.py",
@@ -614,8 +744,8 @@
     },
     {
       "path": "zyo/solvers/native_simplex.py",
-      "bytes": 11481,
-      "sha256": "c5049de7d849e02f0852848c6fdc652877814d70a8afc1a34add035b0edb128b"
+      "bytes": 15110,
+      "sha256": "3e1e8a83bb0ebe31bcebdf8b9a2318a9f204b63cfdecf342083e8a0bd56fc51a"
     },
     {
       "path": "zyo/solvers/native_sparse.py",
@@ -629,23 +759,23 @@
     },
     {
       "path": "zyo/sparse_certificate.py",
-      "bytes": 8293,
-      "sha256": "3c65f7fb3c87d8683d4cff42f326c8e88085cb06c265e29fed34407dc59199bf"
+      "bytes": 11826,
+      "sha256": "545876d4ef7883fc7da51dfd9d2498def3dcffdde76e65a9b3bdde697e877486"
     },
     {
       "path": "zyo/sparse_domain.py",
-      "bytes": 10710,
-      "sha256": "00f8af9764807ae09864266773672a6c73ff9ad0e122ae733685591ded677b0e"
+      "bytes": 11944,
+      "sha256": "0e9862e2117a54dd45ad69906ea72fa0ab8b4bdcda22c2e75035c5173535370f"
     },
     {
       "path": "zyo/sparse_lp.py",
-      "bytes": 35648,
-      "sha256": "1836b87ae5e42d61d26f6db5365316a497df39d5b5ddd295cc26a2a71456b763"
+      "bytes": 41141,
+      "sha256": "8276214c9ac9b061fbf4d401b2d55f173c1bfbcf4a6e038820f136064e95f3ac"
     },
     {
       "path": "zyo/sparse_mip.py",
-      "bytes": 19185,
-      "sha256": "70d408918482f7adc34042f15e30d010cd385d89a2f10b1fc60abea5d1a38010"
+      "bytes": 22827,
+      "sha256": "c2cabeb8f5a659d4370115e155f4eac7ddd68ff0990e9a214d00f398d4837bed"
     },
     {
       "path": "zyo/sparse_phase_one.py",
@@ -654,8 +784,8 @@
     },
     {
       "path": "zyo/sparse_simplex.py",
-      "bytes": 73794,
-      "sha256": "0f04047d080f6f8797d8343f48c03ebd8b56aba6f10b6d2ba8be4dfe04354e24"
+      "bytes": 112737,
+      "sha256": "7dda18fe35cf8cab19ed9d0130a08b59f666be8191989af3655594a9c5c1fe9e"
     },
     {
       "path": "zyo/standard_simplex.py",
@@ -679,8 +809,8 @@
     },
     {
       "path": "zyo/warm_start.py",
-      "bytes": 6495,
-      "sha256": "d253daf252b007c9757b3bd51a5ac35a22a0ffe149b36e6e94f3d68a858c2f0e"
+      "bytes": 12919,
+      "sha256": "59eda65abd93c7c28024b6df6e84a34426159fc382b0131582d5eff714240ed7"
     },
     {
       "path": "zyo_power/__init__.py",

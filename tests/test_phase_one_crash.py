@@ -1,7 +1,8 @@
 # Phase-I 启动方案的独立验收：逻辑列优先启动（crash）必须与逐行人工变量（plain）给出同一个
-# 最优值，并且只在**严格降低**初始人工不可行量时才被自动采用——这条触发规则来自 MIPLIB 六题
-# 实测（neos-3381206-awhea 是唯一被 crash 弄差的实例，而它恰好也是不可行量没有下降的那一题）。
+# 最优值；等人工目标时仅在节省的人工基列超过当前更新额度时优先 crash，
+# 避免让大题的整个额度耗在零值人工列的逐一退出，也保留小题原来的 plain 选择。
 import math
+import inspect
 import unittest
 
 import numpy as np
@@ -20,6 +21,32 @@ def homogeneous(rows, rhs, sense, lower, upper):
 
 
 class PhaseOneCrashTests(unittest.TestCase):
+    def test_forced_crash_reports_unavailable_instead_of_silent_plain_fallback(self):
+        # 两行共享同一结构列，没有任一行的单位列；强制策略应明确失败。
+        wide = csc_matrix([[1.], [1.]])
+        with self.assertRaisesRegex(ValueError, 'unavailable'):
+            _phase_one(wide, np.zeros(1), np.full(1, INF), 2, 1,
+                       phase_one_crash=True, iteration_limit=10)
+
+    def test_equal_activity_uses_crash_if_it_saves_more_artificial_rows_than_budget(self):
+        # 手算：3个单位行、零残差。两个起点人工目标都为0；plain有3个人工基列，
+        # 仅2次额度不足以全部驱除，crash直接用单位列为基，不占清理额度。
+        wide = csc_matrix(np.eye(3))
+        lower = np.zeros(3)
+        upper = np.full(3, INF)
+        phase, record = _phase_one(wide, lower, upper, 3, 3, iteration_limit=2)
+        self.assertEqual(phase, 'FEASIBLE', record.get('reason'))
+        self.assertIn('budget-aware', record['start_strategy'])
+        self.assertEqual(record['start_artificial_rows'], 0)
+
+    def test_equal_activity_keeps_plain_when_budget_covers_original_artificial_rows(self):
+        # 小题若额度已能覆盖初始人工基列，则不因“更少列”而改变默认路径。
+        wide = csc_matrix(np.eye(3))
+        phase, record = _phase_one(wide, np.zeros(3), np.full(3, INF),
+                                   3, 3, iteration_limit=4)
+        self.assertEqual(phase, 'FEASIBLE', record.get('reason'))
+        self.assertIn('plain', record['start_strategy'])
+
     def test_crash_is_taken_when_it_strictly_reduces_the_artificial_activity(self):
         # min x ; 0 <= x <= 5。齐次行是 x - s = 0，s ∈ (-inf, 5]；结构列 x 自己就是 +e_0，
         # 于是它能取到恰好满足本行的值 5（在 [0, 5] 内），该行不需要人工变量。
@@ -90,6 +117,78 @@ class PhaseOneCrashTests(unittest.TestCase):
             value = crash['initial'][column]
             self.assertGreaterEqual(value, lower[column]-1e-9)
             self.assertLessEqual(value, upper[column]+1e-9)
+
+    def test_nonconsecutive_artificial_rows_keep_compact_column_numbers(self):
+        # 两个逻辑基行夹着三个需人工列的行；人工列编号必须按其出现次序连续分配。
+        body = csc_matrix(np.array([[1., 0., 0.], [0., 0., 2.], [0., 0., 3.],
+                                    [0., 1., 0.], [0., 0., 4.]]))
+        crash = _crash_start(body, np.zeros(3), np.full(3, INF), np.zeros(3))
+        self.assertEqual(crash['artificial_rows'], [1, 2, 4])
+        self.assertEqual(crash['basis_offset'], [0, 3, 4, 1, 5])
+
+    def test_second_unit_candidate_uses_signed_original_row_activity(self):
+        # 第一候选 +e0 需取 -2 而越界；第二候选 -e0 取 2 合法。
+        # 多行列固定在 1，会贡献行活动量 (2,3,4)，故仅后两行需人工变量 3+4=7。
+        body = csc_matrix(np.array([[1., -1., 0., 2., 0.],
+                                    [0., 0., 1., 3., 0.],
+                                    [0., 0., 0., 4., 1.]]))
+        lower = np.array([0., 0., 0., 1., 0.])
+        upper = np.array([10., 10., 10., 1., 10.])
+        crash = _crash_start(body, lower, upper, lower.copy())
+        self.assertEqual(crash['logical_rows'], [0])
+        self.assertEqual(crash['basis_offset'], [1, 5, 6])
+        self.assertEqual(crash['artificial_rows'], [1, 2])
+        self.assertEqual(crash['initial'][1], 2.)
+        self.assertEqual(crash['activity'], 7.)
+
+    def test_sparse_crash_matches_independent_dense_small_row_oracle(self):
+        # 小矩阵才允许稠密参考；直接按行定义计算候选，不调用求解器生成预期值。
+        rng = np.random.default_rng(20260929)
+        for trial in range(30):
+            body = rng.integers(-2, 3, size=(5, 8)).astype(float)
+            body[:, :5] = np.diag(rng.choice([-1., 1.], size=5))
+            lower = rng.integers(-2, 2, size=8).astype(float)
+            upper = lower+rng.integers(0, 5, size=8)
+            placement = lower.copy()
+            candidates = {}
+            for column in range(body.shape[1]):
+                nonzero = np.flatnonzero(body[:, column])
+                if len(nonzero) == 1 and abs(abs(body[nonzero[0], column])-1.) <= 1e-12:
+                    row = int(nonzero[0])
+                    candidates.setdefault(row, []).append((column, float(np.sign(body[row, column]))))
+            expected = placement.copy()
+            chosen = {}
+            for row in sorted(candidates):
+                for column, sign in candidates[row]:
+                    others = float(body[row] @ expected)-body[row, column]*expected[column]
+                    value = -others/sign
+                    if lower[column]-1e-12 <= value <= upper[column]+1e-12:
+                        chosen[row] = column
+                        expected[column] = value
+                        break
+            actual = _crash_start(csc_matrix(body), lower, upper, placement)
+            if not chosen:
+                self.assertIsNone(actual, trial)
+                continue
+            artificial_rows = [row for row in range(5) if row not in chosen]
+            basis = [chosen[row] if row in chosen else 8+artificial_rows.index(row)
+                     for row in range(5)]
+            with self.subTest(trial=trial):
+                self.assertEqual(actual['logical_rows'], sorted(chosen))
+                self.assertEqual(actual['basis_offset'], basis)
+                self.assertEqual(actual['artificial_rows'], artificial_rows)
+                np.testing.assert_allclose([actual['initial'][j] for j in range(8)], expected,
+                                           rtol=0, atol=1e-12)
+                self.assertAlmostEqual(actual['activity'],
+                                       float(np.sum(np.abs((body @ expected)[artificial_rows]))), places=10)
+
+    def test_crash_mapping_does_not_scan_artificial_row_list_for_every_row(self):
+        # 大矩阵启动频繁发生；逐行 list.index 会把 O(m) 编号退化为 O(m²)。
+        self.assertNotIn('artificial_rows.index(', inspect.getsource(_crash_start))
+
+    def test_crash_does_not_materialize_each_candidate_row(self):
+        # 单位列仅作用本行；逐行稀疏切片再稠密化会令大题启动成本随候选行数爆炸。
+        self.assertNotIn('body[row, :].todense()', inspect.getsource(_crash_start))
 
     def test_crash_start_is_none_when_no_unit_column_can_help(self):
         # 没有单位列可用时返回 None，由调用方退回 plain。

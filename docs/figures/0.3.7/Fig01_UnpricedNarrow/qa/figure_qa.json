@@ -1,0 +1,69 @@
+{
+  "actual_backend": "Python / matplotlib Agg fallback",
+  "fallback_reason": "Same-day Origin native export carried a demo watermark over plotted data",
+  "origin_trial": "Demo-watermarked trial is retained in the private research archive",
+  "analytic_input": [
+    {
+      "case": "wide_box",
+      "coefficient": "-1E-10",
+      "upper": "1E+12",
+      "current_status": "NUMERICAL_ERROR_AT_ZERO"
+    },
+    {
+      "case": "narrow_box",
+      "coefficient": "-1E+15",
+      "upper": "1E-13",
+      "current_status": "OPTIMAL_AT_UPPER"
+    }
+  ],
+  "source_data_sha256": "cfcb58245ae1bf38b506b7ee4a4e6eee2eae6daf93fbd1c6234f8d92533ad2c4",
+  "source_test_relative": "tests/test_sparse_simplex_unpriced_gap.py",
+  "source_test_sha256_at_render": "84ac330d69790cfea9a365b2fb69214aac12d8cf0dbe79c9d06278756747e9eb",
+  "script_sha256": "cdeb8f8729ba04b197a30c7bc8365a3e48a24a886d7672a1af72d61fd72446bd",
+  "figure_sha256": {
+    "png": "73ec4ee712a3c574de8ba22313bfe1d992b9c13d4db014ba670f343bf47642ba",
+    "pdf": "c6266c61066de8c37c5241845f95eaef8707c328e2450d910572b57231a9d0cc",
+    "svg": "4e3bf8dc57a6d1f30020dfd8e19eb20e1cbb910c1ca87f7135eebcc245462c9b"
+  },
+  "declared_axes": {
+    "panel_a_x_display": [
+      -0.08,
+      1.08
+    ],
+    "panel_a_x_end_ticks": [
+      -0.08,
+      1.08
+    ],
+    "panel_a_y_display": [
+      -108,
+      8
+    ],
+    "panel_a_y_end_ticks": [
+      -108,
+      8
+    ],
+    "panel_b_x_display": [
+      -0.08,
+      1.08
+    ],
+    "panel_b_x_end_ticks": [
+      -0.08,
+      1.08
+    ],
+    "panel_b_y_display": [
+      -108,
+      8
+    ],
+    "panel_b_y_end_ticks": [
+      -108,
+      8
+    ]
+  },
+  "scope": "Two analytic one-variable LP witnesses, not a benchmark",
+  "visual_review": "PASS: final 600-dpi PNG and fresh 200-dpi PDF raster inspected; points, status boxes, fonts, and eight axis-end tick marks visible without clipping",
+  "pdf_page_count": 1,
+  "pdf_page_size_mm": [190, 130],
+  "pdf_fonts": "Embedded SimSun and Times New Roman subsets",
+  "focused_native_tests": "6/6 passed",
+  "origin_processes_after": 0
+}

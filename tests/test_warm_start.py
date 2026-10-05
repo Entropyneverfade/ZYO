@@ -7,7 +7,7 @@ import numpy as np
 from scipy.sparse import csc_matrix
 
 from zyo.sparse_simplex import SparseBasis
-from zyo.warm_start import evaluate_reuse
+from zyo.warm_start import evaluate_reuse, capture_basis_start
 
 
 def build(rows):
@@ -130,6 +130,50 @@ class WarmStartReuseTests(unittest.TestCase):
         decision = evaluate_reuse(self.matrix, self.basic, np.zeros(5), np.ones(5), self.costs)
         for key in ('basis_valid', 'equation_residual_ok', 'bounds_ok'):
             self.assertIn(key, decision.checks)
+
+    def test_explicit_upper_side_preserves_a_feasible_basic_point(self):
+        # 手算 x0+x1=10，x0∈[0,1]。仅 x1=10 时同一个基 x0=0 可行；
+        # x1=0 则 x0=10 不可行，所以不能只存基下标后猜非基下界。
+        matrix = build([[1.0, 1.0]])
+        lower = np.array([0.0, 0.0])
+        upper = np.array([1.0, 10.0])
+        cold_side = evaluate_reuse(matrix, [0], lower, upper, np.array([1.0, 0.0]),
+                                   rhs=np.array([10.0]))
+        self.assertFalse(cold_side.reusable)
+        kept_side = evaluate_reuse(matrix, [0], lower, upper, np.array([1.0, 0.0]),
+                                   rhs=np.array([10.0]), nonbasic_at_upper=[1])
+        self.assertTrue(kept_side.reusable, kept_side.reason)
+        self.assertEqual(kept_side.basic_values, [0.0])
+        self.assertEqual(kept_side.nonbasic_values, {1: 10.0})
+
+    def test_explicit_side_rejects_missing_finite_bound_and_basic_indices(self):
+        matrix = build([[1.0, 1.0]])
+        lower = np.array([0.0, 0.0])
+        upper = np.array([1.0, math.inf])
+        wrong_upper = evaluate_reuse(matrix, [0], lower, upper, np.zeros(2),
+                                     nonbasic_at_upper=[1])
+        self.assertFalse(wrong_upper.reusable)
+        self.assertIn('upper', wrong_upper.reason)
+        basic_index = evaluate_reuse(matrix, [0], lower, upper, np.zeros(2),
+                                     nonbasic_at_upper=[0])
+        self.assertFalse(basic_index.reusable)
+        self.assertIn('basic', basic_index.reason)
+
+    def test_capture_basis_start_keeps_upper_side_and_rejects_interior(self):
+        # 手算可行顶点 (x0,x1)=(0,10)，基 x0、非基 x1 在上界。
+        matrix = build([[1.0, 1.0]])
+        lower = np.array([0.0, 0.0])
+        upper = np.array([1.0, 10.0])
+        start = capture_basis_start(matrix, [0], np.array([0.0, 10.0]),
+                                    lower, upper, rhs=np.array([10.0]))
+        self.assertTrue(start.available, start.reason)
+        self.assertEqual(start.basic, [0])
+        self.assertEqual(start.nonbasic_at_upper, [1])
+        self.assertLessEqual(start.max_equation_residual, 1e-12)
+        bad = capture_basis_start(matrix, [0], np.array([0.5, 9.5]),
+                                  lower, upper, rhs=np.array([10.0]))
+        self.assertFalse(bad.available)
+        self.assertIn('neither bound', bad.reason)
 
 
 if __name__ == '__main__':

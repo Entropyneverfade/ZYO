@@ -8,6 +8,20 @@ import zyo.sparse_simplex as simplex
 
 
 class BasicValueStepTests(unittest.TestCase):
+    def test_phase_two_nonbasic_start_builds_basis_membership_once(self):
+        # 大题超时栈定位到每个列下标都重建整套基集合；这里只允许扫描基一次。
+        class CountedBasis(list):
+            scans = 0
+
+            def __iter__(self):
+                self.scans += 1
+                return super().__iter__()
+
+        basis = CountedBasis([3, 1])
+        initial = simplex._phase_two_nonbasic_initial([10., 20., 30., 40., 50.], basis)
+        self.assertEqual(initial, {0: 10., 2: 30., 4: 50.})
+        self.assertEqual(basis.scans, 1)
+
     def advance(self, values, indices, moving, step):
         helper = getattr(simplex, '_advance_basic_values', None)
         self.assertTrue(callable(helper), '需要有可独立验证的基值更新操作')

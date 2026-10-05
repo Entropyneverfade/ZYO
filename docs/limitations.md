@@ -4,27 +4,30 @@
 
 | 引擎 / Engine | 已验证范围 / Verified scope | 能力边界 / Boundary |
 |---|---|---|
-| `native_simplex` | 原始稀疏修正单纯形LP；自由/单边变量、标准化与独立KKT；Netlib4×3通过 | LP专用；公开装配门行×变量≤2,000,000；困难大题底层Phase-I有退化/额度限制；对偶驱动尚未验收 |
+| `native_simplex` | 原始稀疏修正单纯形LP；自由/单边变量、标准化、原模型KKT门与手算小基后验认证；0.3.5冻结Netlib开发批次4×3按当时的容差KKT门通过 | LP专用；0.3.7候选源码重验同4题×3次，严格原模型证书0/12通过，真实状态含证书失败与数值停止；≤8行后验见证仅覆盖小基；公开装配门行×变量≤2,000,000 |
 | `native_sparse` | 自研有限盒内点LP/基本分支定界；非有限域显式人造盒阶梯及原域检查 | 人造截断本身不等价于原域；仅原域检查通过的结果可接受，MILP难搜索仍受限 |
 | `native` | 自研密集两阶段单纯形/基本分支定界，原有小题/UC检查 | 密集表规模门；其他数值边界继续独立测试 |
 
 原生计算不调用外部优化器，无静默回退。NumPy/SciPy/SuperLU用于基础数值运算。
 可行性本身不证明最优；限制状态、大题失败和不同模型范围分别保存。
-[认证LP教程](native_simplex.md)、[0.3.5算法实测](releases/0.3.5.md)及[0.3.6稀疏输入验收](releases/0.3.6.md)提供当前方法、证据与复现入口。
+[认证LP教程](native_simplex.md)、[0.3.5冻结算法实测](releases/0.3.5.md)、[0.3.6稀疏输入验收](releases/0.3.6.md)及[0.3.7手算证书边界](releases/0.3.7.md)分别给出方法、历史批次与当前解析增量。
 
 English: the primal sparse revised-simplex LP engine, finite-box interior-point MILP engine and dense
-MILP engine have separate validation scopes. Netlib4×3 independently passes on the certified LP path;
-large degenerate Phase-I and the unaccepted dual driver retain distinct limitations. Native work uses
+MILP engine have separate validation scopes. The archived 0.3.5 Netlib4×3 batch passed its then-current
+tolerance-based KKT audit. The 0.3.7 candidate was rerun on the same four development cases, three times
+each: 0/12 passes the stricter original-model certificate, with real certificate failures or numerical stops.
+Large degenerate Phase-I
+and the unaccepted dual driver retain distinct limitations. Native work uses
 basic linear algebra only, without optimization-engine calls or silent fallback. Status and independent
 certificates determine scientific interpretation; feasibility alone does not prove optimality.
 The public LP adapter has a2,000,000 row-column allocation gate for its current dense input
 assembly. The large development benchmark uses the lower-level sparse Phase-I driver instead.
 
-当前发布工程验收：459研发回归、283独立非editable安装测试（0跳过），安装教程目标−5且证书通过；
-全部安装验收封锁外部优化模块。小题数、内部大题Phase-I和成熟求解器覆盖分别评价。
-Release engineering acceptance:459 development regressions and283 independently installed public
-tests pass with zero skips under an external-optimizer embargo; the installed analytical guide
-returns objective−5 and a verified certificate. These scopes are evaluated separately.
+历史0.3.5工程验收为459研发回归、283独立非editable安装测试（0跳过），安装教程目标−5且证书通过；
+该批次封锁外部优化模块。0.3.7候选的净安装及完整回归另按冻结源码记录。
+Archived0.3.5 engineering acceptance comprised459 development regressions and283 independently
+installed public tests, with an optimizer-import embargo and an analytical objective−5 certificate.
+The0.3.7 candidate receives its own frozen-source and clean-install receipts.
 
 ## 0.3.3历史能力与实测 / Historical 0.3.3 scope and measurements
 

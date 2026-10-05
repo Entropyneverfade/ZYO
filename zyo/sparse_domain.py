@@ -22,9 +22,12 @@ bound on the transformed problem pulls back to the ORIGINAL domain analytically:
 the transformed box term is replaced by the original-domain one. Acceptance
 depends on original-domain primal/dual and gap checks, not on success in the
 artificial box alone. Free variables whose split parts both carry non-negligible
-reduced costs yield no bound. These are floating-point checks, not exact proofs.
+reduced costs yield no bound. Candidate multipliers start as binary64 values;
+accepted row signs, domain recession signs and bounds are checked with exact
+rational arithmetic on the parsed binary64 model.
 """
 import math
+from fractions import Fraction
 
 import numpy as np
 from lzyopt.model import Constraint, LinearExpression
@@ -32,9 +35,6 @@ from lzyopt.model import Constraint, LinearExpression
 # 人造上界阶梯：由小到大逐个尝试。过大的人造宽度会恶化内点法条件数（实测 1e4
 # 以上出现相对间隙劣化和线性方程残差失败），过小则可能裁剪真实最优。
 ARTIFICIAL_LADDER = (1.0e3, 1.0e4, 1.0e5)
-
-# 自由变量拆分中"可忽略的简约成本"判定：两分量都不可忽略时原域下确界为 -∞。
-FREE_SPLIT_REDUCED_TOL = 1e-6
 
 
 def domain_kinds(model):
@@ -136,14 +136,6 @@ def original_multipliers(certificate):
     return np.asarray(multipliers, dtype=float)
 
 
-def _scale_of(model, reduced):
-    """Magnitude reference for judging whether a reduced cost is numerically zero."""
-    total = abs(model.objective.constant) if hasattr(model.objective, 'constant') else 0.0
-    for coefficient in model.objective.terms.values():
-        total += abs(coefficient)
-    return 1.0+total+float(np.max(np.abs(reduced), initial=0.0))
-
-
 def domain_bound(model, multipliers):
     """Weak-duality bound over the ORIGINAL (possibly unbounded) domains.
 
@@ -153,11 +145,10 @@ def domain_bound(model, multipliers):
 
     The in-domain minimum is finite only when the reduced cost is compatible with
     the variable's domain: ``r >= 0`` for a lower-bounded variable, ``r <= 0`` for
-    an upper-bounded one, and ``r == 0`` (numerically) for a free one. When that
-    fails along a variable that has no bound in the improving direction, the
-    objective is unbounded below, which is reported as ``improving_ray`` instead of
-    silently returning -inf or a clipped optimum. Returns ``available=False`` with
-    a reason when no finite bound can be justified.
+    an upper-bounded one, and ``r == 0`` exactly for a free one. An infinite
+    Lagrangian infimum for one multiplier does NOT prove primal unboundedness:
+    the original rows may block that direction. All signs and terms below use
+    exact rationals of the parsed binary64 inputs; the float bound rounds down.
     """
     lam = np.asarray(multipliers, dtype=float)
     if lam.shape != (len(model.constraints),) or not np.all(np.isfinite(lam)):
@@ -165,54 +156,85 @@ def domain_bound(model, multipliers):
     for row, value in zip(model.constraints, lam):
         if (row.sense == '<=' and value > 0) or (row.sense == '>=' and value < 0):
             return dict(available=False, reason='multiplier sign is incompatible with the original row')
-    direction = 1.0 if model.sense == 'min' else -1.0
-    reduced = np.zeros(len(model.variables))
-    for index, coefficient in model.objective.terms.items():
-        reduced[index] = direction*coefficient
-    magnitude = abs(direction*model.objective.constant)
-    dual_terms = []
-    for row, value in zip(model.constraints, lam):
-        dual_terms.append(-row.expression.constant*value)
-        magnitude += abs(row.expression.constant*value)
-        for i, coefficient in row.expression.terms.items():
-            reduced[i] -= coefficient*value
-    reference = _scale_of(model, reduced)
-    # 域可行性（fail-closed）：简约成本与变量域不相容时，下确界不是有限值。
-    # 对下界型变量要求 r>=0；上界型要求 r<=0；自由变量要求 r 数值为零。
-    box = np.zeros(len(model.variables))
-    improving = []
-    for index, var in enumerate(model.variables):
-        r = reduced[index]
-        zero = abs(r) <= FREE_SPLIT_REDUCED_TOL*reference
-        if math.isfinite(var.lb) and math.isfinite(var.ub):
-            box[index] = min(r*var.lb, r*var.ub)
-        elif math.isfinite(var.lb):
-            if r < -FREE_SPLIT_REDUCED_TOL*reference:
-                improving.append(var.name)
-                continue
-            box[index] = r*var.lb
-        elif math.isfinite(var.ub):
-            if r > FREE_SPLIT_REDUCED_TOL*reference:
-                improving.append(var.name)
-                continue
-            box[index] = r*var.ub
-        else:
-            if not zero:
-                improving.append(var.name)
-                continue
-            box[index] = 0.0
-        magnitude += abs(box[index])
-    if improving:
-        return dict(available=False, can_improve_without_limit=True, variables=improving,
-                    reason='reduced cost is incompatible with the variable domain, so the '
-                           'objective improves without limit along that direction',
-                    reduced_costs=reduced.tolist())
-    raw = math.fsum([direction*model.objective.constant, *dual_terms, *box])
-    operations = 64+max((len(row.expression.terms) for row in model.constraints), default=0)
-    allowance = operations*np.finfo(float).eps*(1.0+magnitude+abs(raw))
-    bound = float(np.nextafter(raw-allowance, -np.inf))
-    if not math.isfinite(bound):
-        return dict(available=False, reason='original-domain bound arithmetic is non-finite')
+    direction = 1 if model.sense == 'min' else -1
+    def rational(value):
+        return Fraction.from_float(float(value))
+
+    def evaluate(weights):
+        # 恢复乘子后重新逐项精确计算，不能把近零浮点简约成本直接截成零。
+        reduced = [Fraction(0) for _ in model.variables]
+        for index, coefficient in model.objective.terms.items():
+            reduced[index] = direction*rational(coefficient)
+        rhs_terms = []
+        for row, weight in zip(model.constraints, weights):
+            if (row.sense == '<=' and weight > 0) or (row.sense == '>=' and weight < 0):
+                return None, [], ['row multiplier sign']
+            rhs_terms.append(-rational(row.expression.constant)*weight)
+            for index, coefficient in row.expression.terms.items():
+                reduced[index] -= rational(coefficient)*weight
+        box = []
+        invalid = []
+        for index, var in enumerate(model.variables):
+            cost = reduced[index]
+            lower, upper = math.isfinite(var.lb), math.isfinite(var.ub)
+            if lower and upper:
+                box.append(min(cost*rational(var.lb), cost*rational(var.ub)))
+            elif lower:
+                if cost < 0:
+                    invalid.append(var.name)
+                else:
+                    box.append(cost*rational(var.lb))
+            elif upper:
+                if cost > 0:
+                    invalid.append(var.name)
+                else:
+                    box.append(cost*rational(var.ub))
+            elif cost != 0:
+                invalid.append(var.name)
+            else:
+                box.append(Fraction(0))
+        if invalid:
+            return None, [], invalid
+        return direction*rational(model.objective.constant)+sum(rhs_terms)+sum(box), box, []
+
+    try:
+        original = [rational(value) for value in lam]
+        # 小分母有理数恢复只提出另一份候选乘子；每一项仍经过完整原域精确核验。
+        # 恢复失败时保持 UNKNOWN，不改变求解容差或把近零数直接当作数学零。
+        reconstructed = [value.limit_denominator(1_000_000) for value in original]
+        candidates = [('original_binary64', original)]
+        if reconstructed != original:
+            candidates.append(('rational_reconstruction_1e6', reconstructed))
+        valid = []
+        invalid = []
+        for source, weights in candidates:
+            exact, box, failed = evaluate(weights)
+            if exact is None:
+                invalid.extend(failed)
+            else:
+                valid.append((exact, box, source, weights))
+        if not valid:
+            # 某组乘子的拉格朗日下确界为 -∞，只说明它不给出有效界；
+            # 原约束未必允许沿该列移动，因此绝不能据此报告原 LP 无界。
+            return dict(available=False, can_improve_without_limit=False,
+                        unbounded_lagrangian=True, variables=sorted(set(invalid)),
+                        reason='Proposed multipliers have no finite original-domain '
+                               'Lagrangian bound; no primal unbounded ray is proved')
+        exact, box, source, weights = max(valid, key=lambda item: item[0])
+        raw = float(exact)
+        if not math.isfinite(raw):
+            raise OverflowError('Exact bound lies outside finite binary64 range')
+        bound = raw
+        if rational(bound) > exact:
+            bound = math.nextafter(bound, -math.inf)
+        if not math.isfinite(bound):
+            raise OverflowError('Rounded bound lies outside finite binary64 range')
+        terms = [float(value) for value in box]
+        allowance = float(exact-rational(bound))
+    except (ValueError, OverflowError, ZeroDivisionError) as exc:
+        return dict(available=False, reason='Exact original-domain bound arithmetic failed: '+str(exc))
     return dict(available=True, bound=bound, raw_bound=raw, roundoff_allowance=allowance,
-                domain_box_term=box.tolist(), multipliers=lam.tolist(),
-                scope='floating-point original-domain weak-duality bound over free/one-sided variables')
+                domain_box_term=terms, multipliers=[float(value) for value in weights],
+                multipliers_exact=[str(value) for value in weights], multiplier_source=source,
+                scope='exact-rational normalized-min weak duality on parsed binary64 data; '
+                      'normalized bound rounds down and an original max bound rounds up')

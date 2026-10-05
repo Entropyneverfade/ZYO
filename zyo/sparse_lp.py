@@ -145,14 +145,36 @@ def _step(x,dx,fraction=1.):
     return min(1.,fraction*float(np.min(-x[negative]/dx[negative]))) if np.any(negative) else 1.
 
 
-def _normal_solver(A,ratio,deadline=None):
+def _normal_direction_diagnostic(A,x,s,rp,rd,rc,dx,dy,ds):
+    # 仅用未正则化原矩阵重算四类残差；正则项不能替代真实牛顿方程验收。
+    ratio=x/s
+    normal_rhs=rp-A@((rc-x*rd)/s)
+    normal_lhs=A@(ratio*(A.T@dy))
+    return dict(normal_equation_residual=float(np.max(np.abs(normal_lhs-normal_rhs),initial=0.)),
+                normal_equation_rhs_max=float(np.max(np.abs(normal_rhs),initial=0.)),
+                primal_newton_residual=float(np.max(np.abs(A@dx-rp),initial=0.)),
+                dual_newton_residual=float(np.max(np.abs(A.T@dy+ds-rd),initial=0.)),
+                complementarity_newton_residual=float(np.max(np.abs(s*dx+x*ds-rc),initial=0.)),
+                ratio_x_over_s_min_max=[float(np.min(ratio)),float(np.max(ratio))])
+
+
+def _normal_solver(A,ratio,deadline=None,*,residual_target=None,max_refinements=3):
     # 正规方程 A*diag(x/s)*A' 的缩放与分解；正则化仅帮助解线性方程，不改变优化模型。
+    if (residual_target is not None and
+            (not math.isfinite(residual_target) or residual_target < 0)):
+        raise ValueError('Normal-equation residual target must be nonnegative and finite')
+    if isinstance(max_refinements,bool) or not isinstance(max_refinements,int) or max_refinements < 0:
+        raise ValueError('Normal-equation refinement count must be nonnegative')
     matrix=(A.multiply(ratio)@A.T).tocsc()
     scale=1./np.sqrt(np.maximum(matrix.diagonal(),1e-30))
     equilibrated=(diags(scale)@matrix@diags(scale)).tocsc()
     factors={}
     statistics={'regularization':0.}
     def solve(rhs):
+        target=(1e-8*(1+np.max(np.abs(rhs),initial=0))
+                if residual_target is None else residual_target)
+        statistics['normal_equation_residual_target']=float(target)
+        best_residual=math.inf
         for ridge in (0.,1e-12,1e-10,1e-8):
             if ridge not in factors:
                 # 与增广系统一致：分解本身不可中断，但每个候选正则项之前都设检查点。
@@ -167,17 +189,29 @@ def _normal_solver(A,ratio,deadline=None):
                 continue
             value=scale*lu.solve(scale*rhs)
             # 迭代改进始终针对未正则化方程；不能通过较大正则项掩盖原方程残差。
-            for _ in range(3):
+            for refinement in range(max_refinements):
                 residual=rhs-matrix@value
-                if np.max(np.abs(residual),initial=0)<=1e-8*(1+np.max(np.abs(rhs),initial=0)):
+                error=float(np.max(np.abs(residual),initial=0))
+                best_residual=min(best_residual,error)
+                if error<=target:
                     statistics['regularization']=ridge
+                    statistics['normal_equation_residual']=error
+                    statistics['refinement_steps']=refinement
                     return value
                 value+=scale*lu.solve(scale*residual)
             residual=rhs-matrix@value
-            if np.max(np.abs(residual),initial=0)>1e-6*(1+np.max(np.abs(rhs),initial=0)):
+            error=float(np.max(np.abs(residual),initial=0))
+            best_residual=min(best_residual,error)
+            # 旧路径保留旧宽松回退；实验路径只按原方程目标接收。
+            acceptable=(error<=target if residual_target is not None else
+                        error<=1e-6*(1+np.max(np.abs(rhs),initial=0)))
+            if not acceptable:
                 continue
             statistics['regularization']=ridge
+            statistics['normal_equation_residual']=error
+            statistics['refinement_steps']=max_refinements
             return value
+        statistics['normal_equation_residual']=best_residual
         raise ArithmeticError('Sparse Newton equations failed residual check for all factorizations')
     return solve,statistics
 
@@ -359,7 +393,8 @@ equations. No regularization changes the optimization model.
     return solve
 
 
-def solve_relaxation(model,lower,upper,options,deadline):
+def solve_relaxation(model,lower,upper,options,deadline,*,_experimental_normal_equations=False,
+                     _experimental_strict_normal_residual=False):
     """Solve one node LP.
 
     Non-finite variable domains never reach this function: the sparse driver in
@@ -368,22 +403,32 @@ def solve_relaxation(model,lower,upper,options,deadline):
     ``>=`` rows are canonicalised here as well, because this entry point is also
     called directly and :func:`_standard_form` requires ``<=``/``==`` rows.
     """
-    return solve_resolved(_canonical_model(model),lower,upper,options,deadline)
+    return solve_resolved(_canonical_model(model),lower,upper,options,deadline,
+                          _experimental_normal_equations=_experimental_normal_equations,
+                          _experimental_strict_normal_residual=_experimental_strict_normal_residual)
 
 
-def solve_resolved(model,lower,upper,options,deadline):
+def solve_resolved(model,lower,upper,options,deadline,*,_experimental_normal_equations=False,
+                   _experimental_strict_normal_residual=False):
     # 算术异常只返回数值未决；不可行判断需要单独的充分证书。
+    if _experimental_strict_normal_residual and not _experimental_normal_equations:
+        raise ValueError('Strict normal residual requires experimental normal equations')
     try:
         with np.errstate(over='raise',invalid='raise',divide='raise'):
-            result = _solve_relaxation(model,lower,upper,options,deadline)
+            result = _solve_relaxation(model,lower,upper,options,deadline,
+                                       _experimental_normal_equations=_experimental_normal_equations,
+                                       _experimental_strict_normal_residual=_experimental_strict_normal_residual)
     except (ArithmeticError,ValueError) as exc:
         result = SparseLPResult('NUMERICAL_ERROR',message='LP arithmetic unresolved: '+str(exc))
     if result.status == 'NUMERICAL_ERROR':
-        return _recover_infeasibility(model,lower,upper,options,deadline,result)
+        return _recover_infeasibility(model,lower,upper,options,deadline,result,
+                                      _experimental_normal_equations=_experimental_normal_equations,
+                                      _experimental_strict_normal_residual=_experimental_strict_normal_residual)
     return result
 
 
-def _recover_infeasibility(model,lower,upper,options,deadline,result):
+def _recover_infeasibility(model,lower,upper,options,deadline,result,*,_experimental_normal_equations=False,
+                           _experimental_strict_normal_residual=False):
     # 仅在旧射线检查未成功的数值失败后尝试一次；直调同一内核避免辅助问题递归恢复。
     # 辅助解、目标和界均不能替代原 LP；只有原始模型充分证书可以关闭节点。
     from .sparse_phase_one import build_phase_one, original_multipliers
@@ -404,7 +449,9 @@ def _recover_infeasibility(model,lower,upper,options,deadline,result):
         aux_options = replace(options,iteration_limit=record['iteration_budget'])
         with np.errstate(over='raise',invalid='raise',divide='raise'):
             phase = _solve_relaxation(auxiliary,[v.lb for v in auxiliary.variables],
-                                      [v.ub for v in auxiliary.variables],aux_options,deadline)
+                                      [v.ub for v in auxiliary.variables],aux_options,deadline,
+                                      _experimental_normal_equations=_experimental_normal_equations,
+                                      _experimental_strict_normal_residual=_experimental_strict_normal_residual)
         result.iterations += phase.iterations
         record.update(auxiliary_status=phase.status,auxiliary_iterations=phase.iterations,
                       auxiliary_reason=phase.message,auxiliary_objective=phase.objective,
@@ -443,7 +490,8 @@ def _recover_infeasibility(model,lower,upper,options,deadline,result):
     return result
 
 
-def _solve_relaxation(model,lower,upper,options,deadline):
+def _solve_relaxation(model,lower,upper,options,deadline,*,_experimental_normal_equations=False,
+                      _experimental_strict_normal_residual=False):
     # 进入标准化前必须已规范化；直接调用方（含测试）由 solve_relaxation 保证。
     model=_canonical_model(model)
     lo=np.asarray(lower,dtype=float); hi=np.asarray(upper,dtype=float)
@@ -532,17 +580,20 @@ def _solve_relaxation(model,lower,upper,options,deadline):
                         return last
                 if iteration==options.iteration_limit:
                     break
-                try:
-                    augmented_statistics={}
-                    augmented=_augmented_solver(A,x,s,rp,rd,augmented_statistics,stabilize_augmented,augmented_assembly,deadline)
-                    stabilize_augmented=augmented_statistics['stabilized']
-                    if 'initial_pivot_ratio' in augmented_statistics:
-                        history[-1]['initial_augmented_pivot_ratio']=augmented_statistics['initial_pivot_ratio']
-                except DeadlineExceeded:
-                    # 时间预算在牛顿步内部耗尽：如实报 TIME_LIMIT，不把半成品方向当成解。
-                    failure='TIME_LIMIT'; message='LP time limit (inside a Newton step)'; break
-                except RuntimeError:
-                    augmented=None  # Redundant equality rows can be rank deficient.
+                augmented_statistics={}
+                augmented=None
+                if not _experimental_normal_equations:
+                    # 默认继续使用原增广系统；法方程仅由隔离实验显式启用。
+                    try:
+                        augmented=_augmented_solver(A,x,s,rp,rd,augmented_statistics,stabilize_augmented,augmented_assembly,deadline)
+                        stabilize_augmented=augmented_statistics['stabilized']
+                        if 'initial_pivot_ratio' in augmented_statistics:
+                            history[-1]['initial_augmented_pivot_ratio']=augmented_statistics['initial_pivot_ratio']
+                    except DeadlineExceeded:
+                        # 时间预算在牛顿步内部耗尽：如实报 TIME_LIMIT，不把半成品方向当成解。
+                        failure='TIME_LIMIT'; message='LP time limit (inside a Newton step)'; break
+                    except RuntimeError:
+                        augmented=None  # 冗余等式可能导致增广矩阵秩亏。
                 normal=None
                 linear_methods=[]
                 linear_ridge=0.
@@ -561,12 +612,36 @@ def _solve_relaxation(model,lower,upper,options,deadline):
                         except ArithmeticError:
                             pass
                     if normal is None:
-                        normal=_normal_solver(A,x/s,deadline)
+                        if _experimental_strict_normal_residual:
+                            # 原牛顿方向允许的残差由 r_p 决定，不能按可能巨大的
+                            # 法方程 RHS 放大；多次改进只改变线性解法，不改门。
+                            normal_target=1e-9*(1+float(np.max(np.abs(rp),initial=0)))
+                            normal=_normal_solver(A,x/s,deadline,
+                                                  residual_target=normal_target,
+                                                  max_refinements=8)
+                            history[-1]['normal_residual_target']=normal_target
+                        else:
+                            normal=_normal_solver(A,x/s,deadline)
                     normal_solve,statistics=normal
-                    dy=normal_solve(rp-A@((rc-x*rd)/s))
+                    try:
+                        dy=normal_solve(rp-A@((rc-x*rd)/s))
+                    except ArithmeticError:
+                        if _experimental_strict_normal_residual:
+                            history[-1]['failed_normal_linear_solve']=dict(statistics)
+                        raise
                     ds=rd-A.T@dy
                     dx=(rc-x*ds)/s
-                    if np.max(np.abs(A@dx-rp),initial=0)>1e-9*(1+np.max(np.abs(rp),initial=0)):
+                    primal_newton_residual=float(np.max(np.abs(A@dx-rp),initial=0.))
+                    if primal_newton_residual>1e-9*(1+np.max(np.abs(rp),initial=0)):
+                        if _experimental_normal_equations:
+                            # 诊断仅在失败处记标量，不返回方向、不改变原残差门。
+                            try:
+                                history[-1]['failed_normal_direction'] = _normal_direction_diagnostic(
+                                    A,x,s,rp,rd,rc,dx,dy,ds)
+                            except (ArithmeticError,ValueError):
+                                history[-1]['failed_normal_direction'] = dict(
+                                    diagnostic_unavailable=True,
+                                    primal_newton_residual=primal_newton_residual)
                         raise ArithmeticError('Refined Newton direction failed original residual check')
                     linear_methods.append('normal_equations_refinement')
                     linear_ridge=max(linear_ridge,statistics['regularization'])
