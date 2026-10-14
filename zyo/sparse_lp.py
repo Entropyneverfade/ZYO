@@ -342,78 +342,131 @@ equations. No regularization changes the optimization model.
     C=_row_scaled_csc(column_scaled,scale_rows)
     K=_augmented_matrix(C) if assembly is None else assembly(C)
     statistics={} if statistics is None else statistics
-    lu=None
+    ridge=math.sqrt(np.finfo(float).eps)
+    factorization_attempts=[]
+    primary_lu=None
     # 装配之后、分解之前、分解之后各设检查点：分解本身不可中断，但它前后的工作可以。
     _check_deadline(deadline)
     if stabilize is None or not stabilize:
         try:
-            lu=splu(K,permc_spec='COLAMD')
+            primary_lu=splu(K,permc_spec='COLAMD')
         except RuntimeError:
             if stabilize is False:
                 raise
+            factorization_attempts.append(dict(regularization=0.,status='factorization_error'))
     _check_deadline(deadline)
     if stabilize is None:
         # 仅在LP初始 x=s=1 时判断分解风险，避免将临近顶点的正常尺度分离误当成初始秩亏。
         # U主元比例只是选择数值路径的启发式，不是删行依据，也不声明精确矩阵秩。
-        pivots=np.abs(lu.U.diagonal()) if lu is not None else np.array([0.])
+        pivots=np.abs(primary_lu.U.diagonal()) if primary_lu is not None else np.array([0.])
         pivot_ratio=float(np.min(pivots,initial=1.)/max(1.,float(np.max(pivots,initial=0))))
-        stabilize=lu is None or pivot_ratio<=64*np.finfo(float).eps
+        stabilize=primary_lu is None or pivot_ratio<=64*np.finfo(float).eps
         statistics['initial_pivot_ratio']=pivot_ratio
     statistics['stabilized']=bool(stabilize)
     # K 的右下零块在等式相关时导致奇异或巨大零空间乘子。正对角块使 Schur 补
     # C*C' + ridge*I 正定；这是线性方程预条件分解，不是给原约束/目标加惩罚。
     # 单位行范数缩放后使用 sqrt(eps) 平衡舍入放大与扰动，随后用原 K 消除扰动。
-    ridge=math.sqrt(np.finfo(float).eps) if stabilize else 0.
+    primary_regularization=ridge if stabilize else 0.
     if stabilize:
         _check_deadline(deadline)
         regularized=K+diags(np.r_[np.zeros(n),np.full(A.shape[0],ridge)])
-        lu=splu(regularized.tocsc(),permc_spec='COLAMD')
+        primary_lu=splu(regularized.tocsc(),permc_spec='COLAMD')
         _check_deadline(deadline)
-    unregularized=None
-    unregularized_statistics={}
+    statistics.update(primary_regularization=primary_regularization,
+                      factorization_alternatives=1,
+                      factorization_attempts=factorization_attempts)
+
     def solve(rc):
-        nonlocal unregularized
-        rhs=np.r_[scale_x*(rd-rc/x),scale_rows*rp]
-        step=lu.solve(rhs)
-        original_refinements=0
-        if not stabilize:
-            # 初始分解没有秩亏风险时，保留原来的数值轨迹，避免无条件扰动正常LP/不可行分支。
-            for _ in range(3):
-                defect=rhs-K@step
-                if np.max(np.abs(defect),initial=0)<=1e-11*(1+np.max(np.abs(rhs),initial=0)):
-                    break
-                step+=lu.solve(defect)
-                original_refinements+=1
-        # 参照Carson/Higham(2017) Algorithm 1.1的残差校正原则，原方程门未通过就不能
-        # 仅因缩放残差很小提前停止。复用同一LU额外补做至多3次改进；本实现仍为双精度，
-        # 不套用该论文混合精度的前向误差保证。旧已通过路径在第0次检查原样返回。
-        for refinement in range(9 if stabilize else 4):
-            dx=scale_x*step[:n]; dy=scale_rows*step[n:]
-            ds=rd-A.T@dy
-            primal=float(np.max(np.abs(A@dx-rp),initial=0))
-            complement=float(np.max(np.abs(s*dx+x*ds-rc),initial=0))
-            # 不能只看缩放/正则化系统残差：还原方向后必须满足原有两项1e-9门。
-            if (all(np.all(np.isfinite(v)) for v in (dx,dy,ds))
-                    and primal<=1e-9*(1+np.max(np.abs(rp),initial=0))
-                    and complement<=1e-9*(1+np.max(np.abs(rc),initial=0))):
-                statistics.update(regularization=ridge,refinement_steps=original_refinements+refinement,
-                                  unregularized_fallback=False)
-                return dx,dy,ds
-            if refinement<(8 if stabilize else 3):
-                step+=lu.solve(rhs-K@step)
-        if stabilize:
-            # 主元启发式也会选中近相关的满秩矩阵；若稳定化改进受限，仍尝试原分解，
-            # 并复用相同的原方程门。两种分解均为基础线性代数，实际采用路径写入日志。
+        alternative_lu=None
+        alternative_ready=False
+
+        def ensure_alternative_lu(alternative_regularization):
+            nonlocal alternative_lu,alternative_ready
+            if alternative_ready:
+                return alternative_lu
+            _check_deadline(deadline)
+            alternative=K if not alternative_regularization else K+diags(
+                np.r_[np.zeros(n),np.full(A.shape[0],alternative_regularization)])
             try:
-                if unregularized is None:
-                    unregularized=_augmented_solver(A,x,s,rp,rd,unregularized_statistics,False,assembly)
-                step=unregularized(rc)
+                alternative_lu=splu(alternative.tocsc(),permc_spec='COLAMD')
             except RuntimeError as exc:
+                statistics['factorization_alternatives']+=1
+                factorization_attempts.append(dict(
+                    regularization=alternative_regularization,status='factorization_error'))
                 raise ArithmeticError('Augmented factorization alternatives exhausted') from exc
-            statistics.update(unregularized_statistics,unregularized_fallback=True)
-            return step
-        # 不一致的相关行不能靠正则化通过；拒绝方向，由原有失败/证书逻辑处理。
-        raise ArithmeticError('Augmented Newton equations failed original residual check')
+            _check_deadline(deadline)
+            statistics['factorization_alternatives']+=1
+            alternative_ready=True
+            return alternative_lu
+
+        rhs=np.r_[scale_x*(rd-rc/x),scale_rows*rp]
+        primal_target=1e-9*(1+np.max(np.abs(rp),initial=0))
+        complement_target=1e-9*(1+np.max(np.abs(rc),initial=0))
+
+        def refine(lu,regularization):
+            # 每个分解候选只作为预条件。残差和验收始终回到未正则化K和原牛顿方程，
+            # 避免把正则化系统的可解性误当成原方向合格。
+            step=lu.solve(rhs)
+            refinement_steps=0
+            if regularization==0.:
+                # 保留旧未正则化路径的缩放残差预改进；不改变最终原方程门。
+                for _ in range(3):
+                    defect=rhs-K@step
+                    if np.max(np.abs(defect),initial=0)<=1e-11*(1+np.max(np.abs(rhs),initial=0)):
+                        break
+                    step+=lu.solve(defect)
+                    refinement_steps+=1
+            maximum_refinements=9 if regularization else 4
+            final_primal=math.inf; final_complement=math.inf
+            for refinement in range(maximum_refinements):
+                refinement_steps=refinement_steps if refinement==0 else refinement_steps+1
+                dx=scale_x*step[:n]; dy=scale_rows*step[n:]
+                ds=rd-A.T@dy
+                final_primal=float(np.max(np.abs(A@dx-rp),initial=0))
+                final_complement=float(np.max(np.abs(s*dx+x*ds-rc),initial=0))
+                if (all(np.all(np.isfinite(value)) for value in (dx,dy,ds))
+                        and final_primal<=primal_target
+                        and final_complement<=complement_target):
+                    return step,dx,dy,ds,refinement_steps,final_primal,final_complement
+                if refinement<maximum_refinements-1:
+                    step+=lu.solve(rhs-K@step)
+            return (None,None,None,None,refinement_steps,final_primal,final_complement)
+
+        primary=refine(primary_lu,primary_regularization)
+        factorization_attempts.append(dict(
+            regularization=primary_regularization,status='rejected' if primary[0] is None else 'accepted',
+            refinement_steps=primary[4],final_primal_residual=primary[5],
+            final_complementarity_residual=primary[6]))
+        if primary[0] is not None:
+            statistics.update(regularization=primary_regularization,
+                              selected_regularization=primary_regularization,
+                              primary_refinement_steps=primary[4],
+                              selected_refinement_steps=primary[4],
+                              refinement_steps=primary[4],unregularized_fallback=False,
+                              selected_method='primary')
+            return primary[1],primary[2],primary[3]
+
+        # 主分解的方向被原方程拒绝后，只允许一个相反正则化候选；先检查预算，
+        # 防止第二个不可中断的splu在总deadline之后启动。
+        alternative_regularization=0. if primary_regularization else ridge
+        alternative_lu=ensure_alternative_lu(alternative_regularization)
+        selected=refine(alternative_lu,alternative_regularization)
+        factorization_attempts.append(dict(
+            regularization=alternative_regularization,
+            status='accepted' if selected[0] is not None else 'rejected',
+            refinement_steps=selected[4],final_primal_residual=selected[5],
+            final_complementarity_residual=selected[6]))
+        if selected[0] is None:
+            raise ArithmeticError('Augmented Newton equations failed original residual check')
+        statistics.update(regularization=alternative_regularization,
+                          selected_regularization=alternative_regularization,
+                          primary_refinement_steps=primary[4],
+                          selected_refinement_steps=selected[4],
+                          refinement_steps=selected[4],
+                          unregularized_fallback=not alternative_regularization,
+                          late_regularization_fallback=bool(alternative_regularization),
+                          selected_method='alternative')
+        return selected[1],selected[2],selected[3]
     return solve
 
 

@@ -4,6 +4,7 @@ from fractions import Fraction
 import importlib.util
 import math
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import zyo
@@ -11,6 +12,50 @@ import zyo
 
 @unittest.skipUnless(importlib.util.find_spec('scipy'), 'SciPy sparse linear algebra required')
 class SparseNewtonTests(unittest.TestCase):
+    def test_unregularized_failure_uses_one_regularized_alternative(self):
+        from scipy.sparse import csc_matrix
+        from zyo.sparse_lp import _augmented_solver
+        # 手算原牛顿方向：A dx=-1/4，A'dy+ds=rd，s dx+x ds=rc。
+        A=csc_matrix([[1.,1.]])
+        x=np.array([1.,3.]); s=np.array([2.,4.])
+        rp=np.array([-.25]); rd=np.array([4.,7.]); rc=np.array([.5,7.])
+        exact_dx=np.array([.25,-.5]); exact_dy=np.array([4.]); exact_ds=np.array([0.,3.])
+        scale_x=np.sqrt(x/s); scale_rows=1./np.sqrt(float(np.sum(x/s)))
+        exact_step=np.r_[exact_dx/scale_x, exact_dy/scale_rows]
+
+        class FakeLU:
+            def __init__(self, regularized):
+                self.regularized=regularized; self.solve_calls=0
+            def solve(self, rhs):
+                self.solve_calls+=1
+                # 未正则化主路径持续返回零方向，迫使原方程门拒绝；
+                # 正则化备选返回手算步并在第0次验收通过。
+                return exact_step.copy() if self.regularized else np.zeros_like(rhs)
+
+        factors=[]
+        def fake_splu(matrix, **_kwargs):
+            diagonal=np.asarray(matrix.diagonal())
+            regularized=abs(float(diagonal[-1])-math.sqrt(np.finfo(float).eps))<1e-18
+            factors.append((regularized,FakeLU(regularized)))
+            return factors[-1][1]
+
+        statistics={}
+        with patch('zyo.sparse_lp.splu', side_effect=fake_splu):
+            dx,dy,ds=_augmented_solver(A,x,s,rp,rd,statistics,stabilize=False)(rc)
+        np.testing.assert_allclose(dx,exact_dx,rtol=0,atol=1e-12)
+        np.testing.assert_allclose(dy,exact_dy,rtol=0,atol=1e-12)
+        np.testing.assert_allclose(ds,exact_ds,rtol=0,atol=1e-12)
+        self.assertLessEqual(float(np.max(abs(A@dx-rp))),1e-9)
+        self.assertLessEqual(float(np.max(abs(A.T@dy+ds-rd))),1e-9)
+        self.assertLessEqual(float(np.max(abs(s*dx+x*ds-rc))),1e-9)
+        self.assertEqual(len(factors),2,'反向备选必须且只能尝试一次')
+        self.assertFalse(factors[0][0]); self.assertTrue(factors[1][0])
+        self.assertEqual(statistics['primary_regularization'],0.)
+        self.assertEqual(statistics['selected_regularization'],
+                         math.sqrt(np.finfo(float).eps))
+        self.assertTrue(statistics['late_regularization_fallback'])
+        self.assertEqual(statistics['factorization_alternatives'],2)
+
     def test_original_units_trigger_refinement_after_scaled_residual_is_small(self):
         from scipy.sparse import csc_matrix
         from zyo.sparse_lp import _augmented_solver
@@ -93,6 +138,11 @@ class SparseNewtonTests(unittest.TestCase):
         self.assertLessEqual(float(np.max(abs(A.T@dy+ds-rd))),1e-9*(1+max(abs(rd))))
         self.assertLessEqual(float(np.max(abs(dx+ds-rc))),1e-9)
         self.assertTrue(statistics['unregularized_fallback'])
+        self.assertEqual(statistics['primary_regularization'],
+                         math.sqrt(np.finfo(float).eps))
+        self.assertEqual(statistics['selected_regularization'],0.)
+        self.assertEqual(statistics['factorization_alternatives'],2)
+        self.assertEqual(statistics['selected_method'],'alternative')
 
 
 if __name__=='__main__':

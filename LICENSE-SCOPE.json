@@ -125,7 +125,8 @@
     "examples/annual_state_path.py",
     "tests/test_public_solver_contract.py",
     "zyo/__init__.py",
-    "zyo/contract.py"
+    "zyo/contract.py",
+    "tests/test_sparse_newton.py"
   ],
   "covered_local_additions": [
     "tools/export_public_release.py",

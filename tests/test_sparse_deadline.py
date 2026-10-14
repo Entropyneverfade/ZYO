@@ -51,6 +51,29 @@ class SparseDeadlineTests(unittest.TestCase):
         self.assertEqual(len(step), 3)
         self.assertTrue(np.all(np.isfinite(np.concatenate([np.atleast_1d(part) for part in step]))))
 
+    def test_regularized_alternative_checks_deadline_before_factorization(self):
+        matrix = csc_matrix(np.array([[1.0, 1.0], [1.0, 3.0]]))
+        x = np.ones(2); s = np.ones(2); rp = np.zeros(2); rd = np.zeros(2)
+
+        class ZeroLU:
+            def solve(self, _rhs):
+                return np.zeros_like(_rhs)
+
+        factorisations = []
+        def fake_splu(_matrix, **_kwargs):
+            factorisations.append(ZeroLU())
+            return factorisations[-1]
+
+        deadline = time.perf_counter()+0.01
+        with patch('zyo.sparse_lp.splu', side_effect=fake_splu):
+            solve = _augmented_solver(matrix, x, s, rp, rd, stabilize=False,
+                                      deadline=deadline)
+            time.sleep(0.02)
+            with self.assertRaises(DeadlineExceeded):
+                solve(-x*s)
+        self.assertEqual(len(factorisations), 1,
+                         '预算耗尽后不得启动第二个增广分解')
+
     def test_normal_solver_raises_when_the_budget_is_already_gone(self):
         matrix = csc_matrix(np.array([[1.0, 1.0], [1.0, 3.0]]))
         solve, _ = _normal_solver(matrix, np.ones(2), time.perf_counter()-1.0)
