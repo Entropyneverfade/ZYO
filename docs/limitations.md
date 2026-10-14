@@ -1,64 +1,31 @@
-# 能力和限制 / Capabilities and limitations
+# ZYO 的能力与限制
 
-## 当前原生路径 / Current native paths
+本页按求解路径和**证据批次**说明实际能力。版本之间的测试、容差和证书门不同；历史通过数不能当作当前源码在更严格验收门下的通过数。
 
-| 引擎 / Engine | 已验证范围 / Verified scope | 能力边界 / Boundary |
-|---|---|---|
-| `native_simplex` | 原始稀疏修正单纯形LP；自由/单边变量、标准化、原模型KKT门与手算小基后验认证；0.3.5冻结Netlib开发批次4×3按当时的容差KKT门通过 | LP专用；0.3.7候选源码重验同4题×3次，严格原模型证书0/12通过，真实状态含证书失败与数值停止；≤8行后验见证仅覆盖小基；公开装配门行×变量≤2,000,000 |
-| `native_sparse` | 自研有限盒内点LP/基本分支定界；非有限域显式人造盒阶梯及原域检查 | 人造截断本身不等价于原域；仅原域检查通过的结果可接受，MILP难搜索仍受限 |
-| `native` | 自研密集两阶段单纯形/基本分支定界，原有小题/UC检查 | 密集表规模门；其他数值边界继续独立测试 |
+## 当前三个自主路径
 
-原生计算不调用外部优化器，无静默回退。NumPy/SciPy/SuperLU用于基础数值运算。
-可行性本身不证明最优；限制状态、大题失败和不同模型范围分别保存。
-[认证LP教程](native_simplex.md)、[0.3.5冻结算法实测](releases/0.3.5.md)、[0.3.6稀疏输入验收](releases/0.3.6.md)及[0.3.7手算证书边界](releases/0.3.7.md)分别给出方法、历史批次与当前解析增量。
+| 路径 | 实现与已验证内容 | 尚未证明的范围 |
+| --- | --- | --- |
+| `native_simplex` | 有界变量稀疏修正单纯形；LP 原模型 KKT 门；自由与单边变量编码；限定规模的小基后验认证 | LP 专用，不接受整数变量；≤8 行小基见证不能推广到大题；退化 Phase-I 和严格原模型证书仍有失败 |
+| `native_sparse` | 稀疏原始—对偶内点法、有限盒 LP 与基本分支定界；非有限域采用显式人工盒阶梯并回查原域 | 人工截断不等于原域证明；未得到有效证书时保留未决；困难 MILP 搜索、热启动、割平面与并行搜索尚未充分验证 |
+| `native` | 密集两阶段单纯形与基本分支定界；小型 LP/MILP 和教学机组组合 | 密集表规模受保护；其他数值失败和退化循环风险继续保留 |
 
-English: the primal sparse revised-simplex LP engine, finite-box interior-point MILP engine and dense
-MILP engine have separate validation scopes. The archived 0.3.5 Netlib4×3 batch passed its then-current
-tolerance-based KKT audit. The 0.3.7 candidate was rerun on the same four development cases, three times
-each: 0/12 passes the stricter original-model certificate, with real certificate failures or numerical stops.
-Large degenerate Phase-I
-and the unaccepted dual driver retain distinct limitations. Native work uses
-basic linear algebra only, without optimization-engine calls or silent fallback. Status and independent
-certificates determine scientific interpretation; feasibility alone does not prove optimality.
-The public LP adapter has a2,000,000 row-column allocation gate for its current dense input
-assembly. The large development benchmark uses the lower-level sparse Phase-I driver instead.
+三个自主路径都不使用外部优化引擎或静默回退。NumPy、SciPy 稀疏矩阵和 SuperLU 只提供基础数值运算。外部适配器仅用于隔离比较；外部解、基或割不能进入自主证明链。候选可行不等于最优；请核对实际后端、停止状态、目标、界、Gap 与独立残差。
 
-历史0.3.5工程验收为459研发回归、283独立非editable安装测试（0跳过），安装教程目标−5且证书通过；
-该批次封锁外部优化模块。0.3.7候选的净安装及完整回归另按冻结源码记录。
-Archived0.3.5 engineering acceptance comprised459 development regressions and283 independently
-installed public tests, with an optimizer-import embargo and an analytical objective−5 certificate.
-The0.3.7 candidate receives its own frozen-source and clean-install receipts.
+`Model.solve('native_simplex')` 当前**直接装配 CSC 稀疏矩阵**。`2,000,000` 个行列元素的预登记门只属于显式稠密参考装配，不限制这一公共稀疏入口；稀疏装配及求解仍可能因资源不足明确返回 `SIZE_LIMIT`。[0.3.6 对角 LP](releases/0.3.6.md)在 `1420×1420`、1420 非零元时经公共入口得到 `OPTIMAL` 和独立 KKT 通过，但该结构不能代表一般大型 LP 的求解能力。矩阵缓冲区字节比也不是程序峰值内存或求解加速比。
 
-## 0.3.3历史能力与实测 / Historical 0.3.3 scope and measurements
+## 当前候选与历史结果分开阅读
 
-0.3.3增加每个LP局部的CSC装配结构复用；233项研发回归、120次同核结构消融数值同一。当前自主数学支持范围沿用下表，缓存换取少量时间收益并增加结构存储；完整逐题比较见[结构复用](sparse_reuse.md)。
+- **0.3.7 当前候选**：原存储 binary64 模型的行、界、对偶和简约成本以更严格证书复核。手算四行 LP 在底层微小未定价停止后获得独立原模型认证，公共状态按既定容差为 `OPTIMAL`，并保留 `raw_status=NUMERICAL_ERROR`。四个 Netlib 开发题各三次的严格复核为 **0/12 通过**：`afiro`、`sc50b` 的接近参考目标候选未过证书，`adlittle`、`sc50a` 为数值停止。不能用小基成功覆盖这些失败。[数值反例与图件](releases/0.3.7.md)。
+- **0.3.5 冻结批次**：按当时容差 KKT 口径，四个 Netlib 开发题各三次为 12/12；研发回归 459 项、独立非 editable 安装公开测试 283 项。该结果只属于当时的源码、门和输入，不能写成 0.3.7 的严格证书成绩。[历史方法和实测](releases/0.3.5.md)。
+- **0.3.3 冻结批次**：每个 LP 局部复用增广 CSC 结构；233 项研发回归及 120 次同核装配消融逐项数值一致。小范围计时收益和额外结构内存见[实测口径](sparse_reuse.md)。
+- **更早的边界集**：2026-09-08 的 360 道普通小整数开发题返回 `OPTIMAL`；18 道边界反例为 9 `OPTIMAL`、7 `INFEASIBLE`、2 `NUMERICAL_ERROR`。168 份分离证书经 Fraction 复算，两个近可行问题仍未决。20 题×5 路径×3 次的当时评测中，稀疏原生对 18 个有限最优题有 17 题三次稳定通过，密集原生为 14/18；自由变量与另外状态题的失败另列，不可并入成功率。
 
-Version0.3.3 adds per-LP CSC assembly reuse, verified by233 development regressions and120 numerically identical ablation calls. Mathematical scope remains as listed below; structural memory is traded for modest measured runtime gains. See the linked per-case comparison.
+## 电力算例能说明什么
 
-0.3.2历史增量：稀疏原方程Newton残差校正、类型安全CSC行缩放及独立解析反例，219项研发回归通过。原生受控free MPS读取见[格式说明](mps.md)。24h/2机组UC的`native`和`native_sparse`接受原始约束、物理、成本及界检查，完整图表及协议见[UC实测](uc_results.md)。密集算法仍有其他数值失败，退化换基规则不具备完整Bland防循环保证；时间与迭代限制继续有效。
+- 单个合成年度储能 MILP 曾以 61,321 变量、8,760 二进制变量、35,041 约束和 113,882 非零元由自主路径完成；搜索在根节点结束。这说明该输入可运行，**不证明一般困难整数搜索性能**，也不代表全年机组组合或概率充裕度完成。
+- 0.3.3 的 8760 次 DC/PWL 调度是各小时**独立**的原生 LP 快照。全年图为逐日均值、月图为原 8760 小时积分；不能从中推出跨时储能、机组启停或 ELCC 结论。[模型、输入与图](releases/0.3.3.md)。
+- 24 小时、两机组教学算例对 `native` 与 `native_sparse` 的原始约束、物理平衡、成本和界进行检查；图中外部求解器是隔离比较。[输入和实测](uc_results.md)。网络 SCUC、全年 UC 与概率充裕度仍需各自模型和验收。
+- GRIDMIND 年度**有限状态路径**小算例可通过[调用契约](solver_contract.md)使用 ZYO 并与 Gurobi 对照。路径目标相同只证明冻结模型的这次交叉核对，不代替逐时物理模拟或神经网络充裕度及独立蒙特卡洛验证。
 
-The historical 0.3.2 increment adds original-equation Newton refinement and type-safe CSC row scaling, with analytical regressions and219 passing development tests. Both native engines are checked against the original UC constraints, physics, costs and bounds. Other numerical failures remain; the dense stable-tie rule is not the complete Bland anti-cycling rule, and resource limits remain enforced. See the linked protocol and figures.
-
-- LP/MILP：自主密集两阶段单纯形/基本分支定界；实验性自主有限盒稀疏内点法/分支定界。不是稀疏修正单纯形，也没有成熟的热启动、割平面、伪成本或并行搜索体系。
-- 稀疏路径要求所有变量有显式有限上下界。盒对偶界及不可行分离采用保守浮点检查，不是一般精确算术证书；无法构造充分射线时仍可能数值未决。
-- 2026-09-08 Phase-I开发集复验：原60与另外300普通小整数题全部OPTIMAL；18边界反例为9 OPTIMAL / 7 INFEASIBLE / 2 NUMERICAL_ERROR。168份分离证书通过Fraction精确复算；174项完整研发回归通过。两近可行未决如实保留，公开测试仍属于开发回归。
-- 本地20题×5路径×3次最终测评中，稀疏原生对18有限题三次稳定通过17题，自由变量题UNKNOWN；另2道状态题为INFEASIBLE、UNKNOWN。密集原生14/18。原两个整数失败各三次OPTIMAL；10/30阶运输LP仍三次OPTIMAL，目标182/172。一般自由/无穷变量及无界证书继续独立开发。
-- 单个合成年度储能 MILP 自主通过，规模为 61,321 变量、8,760 二进制、35,041 约束、113,882 非零元；根节点即完成，不代表一般难整数搜索性能，也不代表论文实验完成。
-- 储能支持单节点固定容量规则、周期迭代与调度模型。周期闭合与 ENS 分别报告。新增有限时域、固定容量单节点机组组合；网络 SCUC、全年 UC 和概率充裕度尚待验收。
-- 原始凸 QP、一般非线性/MINLP、非凸 AC-OPF 尚未验收；MPS 写出、完整 fixed MPS/LP 语法、完整 LP 原始—对偶/基本解证书和大规模公开基准仍在计划中。
-- 外部适配器保留历史显式比较用途，不能计为自主算法；没有静默回退。共享小模型目标相同只是交叉佐证，不是完备证明。
-
-尚无可信“全球第几”结论。目前定位为可修改、可追溯的自主研究原型，未达到成熟工业通用求解器水平。国际测试将按问题类别、固定公开实例、同机资源、正确性门、解决率和失败计入的统计开展，不能从有利单例推算排名。
-
-## English
-
-- The independent engines implement dense two-phase simplex/basic branch-and-bound and an experimental finite-box sparse interior-point/branch-and-bound path. They do not yet provide mature revised simplex, warm starts, cutting planes, pseudocost branching or parallel search.
-- The sparse path requires explicit finite bounds. Box bounds and sufficient separation witnesses use protected floating-point arithmetic, not a general exact certification system. Failure to construct a witness can leave a numerical failure unresolved.
-- The 2026-09-08 Phase-I replay solves all360 ordinary small development MILPs. The18 adversarial cases return9 OPTIMAL /7 INFEASIBLE /2 NUMERICAL_ERROR. All168 emitted certificates pass exact Fraction recomputation and all174 full development tests pass. The two near-feasible numerical failures remain explicit; public tests are development regressions.
-- In the final300-run assessment, native sparse passes all three repeats on17/18 finite instances and dense native on14/18. The remaining sparse finite case has free variables and returns UNKNOWN; separate status cases return INFEASIBLE and UNKNOWN. Both repaired integer cases and both10/30-order transportation LPs pass three repeats. Free/infinite-variable support and general unboundedness certificates retain separate validation milestones.
-- One synthetic annual storage MILP had 61,321 variables, 8,760 binaries, 35,041 constraints and 113,882 nonzeros, and closed at the root node. This is not evidence of difficult combinatorial search, general yearly unit commitment, or completed paper experiments.
-- Storage examples cover fixed-capacity single-node rules, periodic iteration and optimization, reporting deterministic ENS separately from cycle closure. A finite-horizon single-node UC model is now validated in the stated scope. Network SCUC, annual UC and probabilistic adequacy remain separate milestones.
-- Original convex QP, general nonlinear/MINLP and nonconvex AC-OPF are not validated. MPS writing, complete fixed-MPS/LP syntax, full LP primal-dual/basic-solution certificates and broad public benchmarks remain future work.
-- External adapters are for isolated comparisons only; no silent fallback. Agreement with another optimizer is corroboration, not a complete proof.
-
-There is no defensible global rank. ZYO is currently an inspectable independent research prototype, not an industrial-class general-purpose solver. Future comparisons must freeze instance sets, resource budgets, tolerances and correctness gates, and report solve rates and failures rather than selecting only favorable examples.
+原始凸 QP、一般非线性/MINLP、非凸 AC-OPF、完整 fixed MPS/LP 语法、一般无界证书和大规模公开基准均未完成全面验收。ZYO 目前没有可信的全球排名；比较应固定公开实例、时间和内存预算、容差及正确性门，计入失败与限制终止，不能仅选择有利算例。

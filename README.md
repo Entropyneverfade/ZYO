@@ -1,171 +1,64 @@
-# ZYO 0.3.7 本地发布候选 · 自主 LP/MILP 研究求解器 / Local release candidate · Independent LP/MILP research solver
+# ZYO：自主 LP/MILP 研究求解器
 
-ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Python 线性建模接口、自主求解内核和单节点储能教学应用。本次为 **研究开发版**，欢迎下载和交流。本项目基于ChatGPT 6 开发，作者本人也在学习中，欢迎相关专业同好交流
+当前公开源码为 **0.3.7 研究开发候选版**。ZYO 提供 Python 线性建模接口、三个自主求解路径和可复核的教学算例。源码可本地安装、运行和研究；它尚不是成熟的工业通用求解器。作者为 Ziyuan Li，开发过程使用了 ChatGPT 6 辅助。
 
-[中英安装与使用 / Bilingual quickstart](docs/quickstart_zh.md) · [能力与限制 / Limitations](docs/limitations.md) · [参与开发 / Contributing](CONTRIBUTING.md) · [版本记录 / Changelog](CHANGELOG.md) · [依赖 / Dependencies](THIRD_PARTY.md)
+[安装与入门](docs/quickstart_zh.md) · [能力与限制](docs/limitations.md) · [数学与数值边界](docs/native_simplex.md) · [版本记录](CHANGELOG.md) · [参与开发](CONTRIBUTING.md)
 
-0.3.7 最新研发增量：原生稀疏法方程回退新增有界原牛顿方向校正。自写 24h `tight_reserve` 机组组合由 ZYO `native_sparse` 独立求得目标 39856.801000227846、ENS0，原模型和物理检查通过；三轮逐小时前缀各23/24最优，保留 2h 数值反例。[公式、输入和中英使用说明](docs/synthetic_uc_examples.md)。
+## 先看实际能力
 
-Latest 0.3.7 research addendum: bounded original-direction correction in the native sparse fallback yields an independently audited optimum on the authored 24-hour tight-reserve UC case. Three repeated prefix scans each accept 23/24; the two-hour numerical boundary is preserved. [Bilingual formulae, input and usage](docs/synthetic_uc_examples.md).
+| 路径 | 已实现的计算 | 当前边界 |
+| --- | --- | --- |
+| `native` | 自编密集两阶段单纯形与基本分支定界 | 密集表规模受保护；适合小型 LP/MILP 教学与回归 |
+| `native_sparse` | 自编稀疏原始—对偶内点法、有限盒处理与基本分支定界 | 非有限域需人工盒阶梯和原域回查；困难整数搜索仍未充分验证 |
+| `native_simplex` | 自编有界变量稀疏修正单纯形与原模型 KKT 检查 | LP 专用；小基后验认证仅覆盖限定规模，大型退化题仍可能数值未决 |
 
-## 授权与用途申请 / Licensing and purpose-only requests
+自主路径使用 NumPy、SciPy 稀疏矩阵与 SuperLU 等基础数值组件，**不调用外部优化器，也不静默回退**。HiGHS、Gurobi、COPT 适配器只用于显式隔离比较。结果中的可行解、下界和 Gap 要与真实停止状态一起阅读；达到时间或节点限制不等于证明最优。
 
-自0.3.4（2026-09-08）起正式采用[ZYO非商业测试许可1.0.0](LICENSE)，[范围清单](LICENSE-SCOPE.json)区分受限新增与历史MIT/第三方部分。许可人 **Ziyuan Li** 保留自有或有权授权内容的商业化，包括收费软件、商业许可和API/SaaS。[本版小结](docs/releases/0.3.7.md)。
+0.3.7 的重点是原存储 binary64 模型的逐项证书复核：先对乘积精确累加，再核行、界、对偶符号、简约成本和原始—对偶差。手算四行 LP 可经独立证书后验认证，同时保留底层 `NUMERICAL_ERROR` 原因。自编 24 小时紧备用机组组合算例由 `native_sparse` 求得目标 `39856.801000227846`、ENS 为 0，并通过原模型与物理检查；三轮逐小时前缀各有 23/24 个获接受最优，2 小时数值反例保留。相同候选源码在四个 Netlib 开发题各三次的更严格原模型证书复核中为 **0/12 通过**。这些结果分别说明小题成功与大题边界，不能合并成一般求解率。[算例公式与结果](docs/synthetic_uc_examples.md) · [0.3.7 图件及证据](docs/releases/0.3.7.md)。
 
-受限新增内容按账号/申请批准非商业测试，默认90日；商用、生产、再分发和服务另批。历史0.3.3和既有MIT代码仍可依[原MIT](LICENSES/MIT-legacy.txt)使用，无需新测试申请。[授权说明](docs/licensing-and-access.md)和[申请入口](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)只需概括用途，不索取实名、联系方式、单位或证明；公开Issue会显示平台账号及内容，请勿填写隐私。
+## 安装与第一个模型
 
-From0.3.4 (2026-09-08), the formal default is [ZYO Noncommercial Testing License1.0.0](LICENSE), with [scope](LICENSE-SCOPE.json) separating eligible additions from inherited MIT/third-party material. **Ziyuan Li** retains commercialization of owned/authorized material, including paid software, commercial licenses and API/SaaS. See the [release summary](docs/releases/0.3.7.md).
-
-## 0.3.7 原 LP 证书与小基后验认证 / Original-LP certificate and small-basis posthoc check
-
-对原存储 binary64 模型逐项复核行、目标及简约成本乘积；微小未定价改善保留真实数值停止。手算四行 LP 的原生小基有理乘子建议经独立原模型证书通过后，公共接口分别记录认证状态与底层停止原因。CSC/CSR 重复系数在原生齐次模型与证书中同义汇总，并保持调用方矩阵不变。[中英公式、手算输入与本版两图](docs/releases/0.3.7.md)附有数据、脚本和后端 QA。
-
-The new original-model check recomputes stored-binary64 products for row activity, objective and reduced costs. Tiny unpriced improvement retains the raw native numerical stop; a four-row hand-checkable LP can obtain a separately verified small-basis posthoc certificate while still reporting that raw stop. Duplicate CSC/CSR entries receive matching native/certificate meaning without mutating the caller's matrix. The [bilingual case note and two versioned figures](docs/releases/0.3.7.md) include raw data, renderer and QA.
-
-当前候选源码另对四个 Netlib **开发题**各重复三次：严格原模型证书通过 **0/12**；`afiro`/`sc50b` 的候选目标接近参考值但证书拒绝，`adlittle`/`sc50a` 为数值停止。该批失败、状态及原输入独立审计保存在本地研发档案；本版手算小题的成功不提升这些大题的验收等级。 / The candidate source also reran four Netlib **development** LPs three times each: **0/12** passes the stricter original-model certificate. Close reference objectives for `afiro`/`sc50b` do not override certificate failure; `adlittle`/`sc50a` retain numerical stops. This narrow analytic improvement does not upgrade those larger cases.
-
-## 0.3.6 稀疏公共 LP 输入 / Sparse public LP input
-
-`Model.solve('native_simplex')`现直接按 CSC 稀疏矩阵装配用户 LP，并在结果中记录装配耗时与矩阵规模。1420×1420、1420非零元的可手算对角 LP 经自主入口得到最优且独立KKT通过。[本版图与数据](docs/releases/0.3.6.md)展示同矩阵的实际稠密/CSC缓冲区字节比；图由Python绘制，源表和脚本随版保存。
-
-The public certified LP path now assembles directly to CSC and records assembly time and matrix size. A hand-checkable 1420×1420 diagonal LP solves with an independent KKT certificate. The [release-specific figure and raw data](docs/releases/0.3.6.md) compare matrix-buffer bytes; the declared renderer is Python.
-
-Restricted additions require account/request-approved noncommercial testing, default90 days; commercial/production use, redistribution and services need separate permission. Historical0.3.3 and existing MIT code retain [original rights](LICENSES/MIT-legacy.txt) without a new test application. The guide/form requests only purpose, not identity, contact, affiliation or evidence. Public issues show accounts/content; provide only non-sensitive summaries.
-
-## 原生认证LP增量 / Native certified LP increment
-
-- 交付`Model.solve('native_simplex')`自主LP路径：有界变量稀疏修正单纯形、Phase-I和独立原始—对偶KKT检查。
-- 完成共享动作预算、人工驱除与被拒起点LU计数，复用有序基下标和向量基值更新。
-- 0.3.5冻结源码的Netlib四开发题各三次求解，按当时容差KKT口径12/12复算通过；[该历史批次方法与实测](docs/releases/0.3.5.md)，[公式与API教程](docs/native_simplex.md)。当前候选源码的严格证书重验结果见上文。
-
-English: the 0.3.5 source delivered the independent LP API, shared update budgets, complete successful-LU
-accounting and equivalent basis-update optimization. Its 12 Netlib calls passed that release's
-tolerance-based KKT audit; the current candidate's stricter replay is reported above.
-
-## 0.3.3 更新 / Updated in 0.3.3
-
-- 稀疏LP每次求解局部复用增广CSC结构，每轮填入新数值并完成数值分解；覆盖结构失效及存储隔离的5项新回归。Added per-LP augmented CSC structural reuse, fresh values/factorizations and five invalidation/isolation regressions.
-- 233项开发回归通过；120次同核消融数值逐项一致，该20题开发集的逐题中位时间之和减少3.00%。Passed233 development regressions and120 numerically identical ablation calls; the sum of per-case median call times falls by3.00% on this20-case development set.
-- 将文献优先诊断纳入中英贡献规范，记录原始研究及成熟求解器公开方法的适用条件。Added literature-first diagnosis and documented applicability of primary research and public commercial-solver guidance.
-
-[0.3.3更新小结与本版图集 / Release summary and figures](docs/releases/0.3.3.md) · [0.3.3方法与完整比较口径 / Method and measurement scope](docs/sparse_reuse.md)。既有机组组合比较图的版本与输入见[原0.3.2结果页](docs/uc_results.md)。Existing UC charts retain their0.3.2 measurement identity.
-
-## 0.3.2 功能 / Features introduced in 0.3.2
-
-- 稀疏Newton方向按原方程残差追加同一LU校正，保留原精度门，并通过解析方向反例验证。Added same-LU refinement governed by the original Newton-equation residuals, with an analytical regression.
-- CSC行缩放直接处理非零元，按输入类型提升精度，覆盖整数与float32极小值反例。Direct CSC row scaling preserves promoted precision, including integer and tiny float32 inputs.
-- 机组组合出图统一资源语义配色与纹理，更新五路径同模实测和双语图表。Added semantic resource colors and hatches, with refreshed five-path measurements and bilingual figures.
-- 完整研发回归219项通过，360普通小整数题最优，168份证书精确复核通过。Passed219 development regressions, solved360 ordinary small integer cases and exactly rechecked168 witnesses.
-
-数学参考 / Mathematical reference: [Carson & Higham, SIAM J. Scientific Computing (2017)](https://doi.org/10.1137/17M1122918)。本次采用双精度残差校正，实际验证范围见[结果与协议](docs/uc_results.md)。This increment uses double-precision residual correction; measured scope is documented with the results.
-
-## 0.3.1 功能 / Features introduced in 0.3.1
-
-- 修复密集单纯形离基步长和退化平局处理，原24h机组组合密集/稀疏各三次最优。Repaired dense ratio/degenerate pivot selection; both native engines pass all three unchanged 24h UC runs.
-- 自研稀疏内核采用直接CSC增广矩阵装配；20题×2种装配×3次消融的数值输出逐项一致，七个背包MILP用时中位数减少约19%–23%。Direct CSC assembly preserves numerical outputs across 120 ablation runs; median times on seven knapsack MILPs fall by approximately 19%–23%.
-
-## 0.3.0 功能 / Features introduced in 0.3.0
-
-- [原生 MPS 读取](docs/mps.md)：受控 free MPS 子集、自有解析器和严格格式检查。Native controlled free-MPS import and explicit format validation.
-- [机组组合教程](docs/unit_commitment.md)：24 小时、2 台机组、风光、爬坡、备用、最小开停机和独立物理检查。A 24-hour two-unit UC example with independent physical validation.
-- [固定种子合成机组组合算例](docs/synthetic_uc_examples.md)：公开公式生成、两种备用情景、真实原生状态与独立复核。Seeded synthetic UC cases with explicit formulas, two reserve scenarios, actual native statuses and independent audits.
-- [GRIDMIND 求解契约](docs/solver_contract.md)：版本化模型/结果指纹、引擎边界、年度状态路径最小例与失败状态语义。Versioned model/result fingerprints, engine boundaries, a minimal annual state-path example and failure-status semantics.
-- [实测与可视化](docs/uc_results.md)：ZYO 稀疏原生、密集原生与三种隔离比较引擎，全部尝试及真实状态。Measured dispatch and all five paths, retaining every status.
-- [实现语言策略](docs/implementation_languages.md)：稳定 Python API，按正确性、实测性能与维护成本选择实现语言。Stable Python API; outcome-driven implementation languages.
-
-运行机组组合并出图 / Run UC with figures:
+已直接验证的环境为 64 位 Windows、Python 3.10.19。其他平台需要自行运行测试；本仓库当前是 GitHub 源码发布，未发布到 PyPI。
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -e ".[storage]"
-.\.venv\Scripts\python.exe -I examples/run_uc.py --input examples/uc_24h.json --output uc-results --plot
-```
-
-![机组组合运行 / UC dispatch](docs/figures/uc_dispatch.svg)
-
-## 自主求解边界
-
-| 路径 | 算法 | 依赖与范围 |
-|---|---|---|
-| `native` | ZYO 自编密集两阶段单纯形＋基础分支定界 | NumPy；有密集表规模保护 |
-| `native_sparse` | ZYO 自编稀疏原始—对偶内点法＋有限盒界＋分支定界 | NumPy/SciPy/SuperLU；非有限域显式人造盒阶梯并回查原域界，活跃人造界拒绝最优，实验性 |
-| `native_simplex` | ZYO 自编有界变量原始稀疏修正单纯形＋独立KKT检查 | NumPy/SciPy/SuperLU基础数值组件；LP专用，逐路径边界与证书单列 |
-| 外部适配器 | HiGHS/Gurobi/COPT | 仅供显式、隔离的独立比较 |
-
-自主路径不调用外部优化引擎，也不自动回退。SciPy 的矩阵/线性方程组件不是优化求解器调用。历史 `lzyopt` 包名为兼容建模与密集内核保留，推荐使用 `import zyo`，也支持 `import ZYO`。
-
-## 安装
-
-需要 64 位 Python 3.10+；目前已直接验证的环境为 Windows/Python 3.10.19。其他平台请运行测试确认，不能从 Python 代码可导入推断全部算法已通过。
-
-```bash
 git clone https://github.com/Entropyneverfade/ZYO.git
 cd ZYO
 python -m venv .venv
-```
-
-Windows PowerShell：
-
-```powershell
 .\.venv\Scripts\python.exe -m pip install -e ".[native-sparse,storage]"
 .\.venv\Scripts\python.exe -X utf8 -m unittest discover -s tests -v
 ```
 
-Linux/macOS 对应解释器为 `.venv/bin/python`。上述完整公开测试包含绘图重绘，因此安装命令同时选择 `storage` 的 Matplotlib；只运行原生 LP 可使用 `.[native-sparse]`，只用密集自主内核可安装 `pip install -e .`。初次安装依赖需网络，安装完成后本地求解无需网络。当前不是 PyPI 发布，请不要把同名第三方包当作本项目安装。
-
-The full public test suite redraws a figure and requires the `storage` extra (Matplotlib) alongside `native-sparse`. For native LP solving alone, `.[native-sparse]` is sufficient; the dense core alone can use `pip install -e .`.
-
-## 第一个模型
+Linux/macOS 将解释器路径改为 `.venv/bin/python`。仅用密集内核可以安装 `-e .`；仅用稀疏 LP 可安装 `-e ".[native-sparse]"`。完整公开测试会重绘图，因此上方安装同时包含 `storage` 绘图依赖。初次安装依赖需要网络，安装完成后本地求解不需要联网。
 
 ```python
 import zyo as zo
 
-# 两类资源满足需求；y 是二进制开关，x 是连续量。
-m = zo.Model('first_model')
-x = m.add_var('x', lb=0, ub=10)
-y = m.add_var('y', vtype='B')
-m.add_constr(x + 2*y >= 4, name='demand')
+m = zo.Model("first_model")
+x = m.add_var("x", lb=0, ub=10)
+y = m.add_var("y", vtype="B")
+m.add_constr(x + 2*y >= 4, name="demand")
 m.minimize(3*x + 2*y)
 
-# 手算最优 x=2、y=1，目标为 8；明确选取自编算法。
-r = m.solve('native')
+r = m.solve("native")
 print(r.status, r.objective, r.best_bound, r.mip_gap)
 if r.has_solution:
     print(r.values)
 ```
 
-有解不等于已证明最优。请同时检查实际状态、界、Gap 和原始约束残差；时间/节点/数值限制不能被描述成最优。
+该模型可手算出 `x=2`、`y=1`、目标 8。使用 ZYO 时请同时检查状态、候选解、界、Gap 和原始约束残差。[更多安装与建模说明](docs/quickstart_zh.md)。
 
-## 测试与规模声明
+## 算例、图件与集成
 
-公开包提供独立预期的核心/储能测试及 60 个冻结小整数开发回归。
+- [0.3.7 数值反例和独立证书](docs/releases/0.3.7.md)：逐图附源数据、重绘脚本、后端与 QA；图为解析反例，不是性能排名。
+- [0.3.6 稀疏输入](docs/releases/0.3.6.md)：1420 阶对角 LP 的矩阵缓冲区字节比及独立 KKT；字节比不是求解加速比。
+- [0.3.3 年度逐时算例](docs/releases/0.3.3.md)：8760 次独立 DC/PWL 调度，全年图使用逐日均值，第一周保留逐小时数据；不代表全年机组组合或概率充裕度。
+- [24 小时机组组合实测](docs/uc_results.md)：自主路径与外部优化器分进程比较，图和状态对应同一输入。
+- [GRIDMIND 调用契约](docs/solver_contract.md)：冻结年度状态路径小算例可选用 ZYO，并保留请求和实际后端、模型指纹、状态、目标、界与 Gap。当前 GRIDMIND 的 Gurobi 主流程仍保留；状态路径一致不等于逐时物理模拟或充裕度闭环已验证。
 
-已有一个 8760 小时合成储能循环 MILP 的自主运行证据，但其搜索仅一个根节点，详见能力说明。
+![24 小时合成机组组合运行图](docs/figures/uc_dispatch.svg)
 
-0.2.0 历史内核基线：稳定化 Newton 分解、原方程校正和有限盒 Phase-I；20 题测评中 18 个有限最优题的稀疏三次稳定通过数为 17。具体批次、证书和运输 LP 结果见[版本记录](CHANGELOG.md)。0.3.0 新应用测量单列于上方实测页。
+图中为合成教学算例，展示已记录的出力、负荷与机组状态；完整输入、单位和验收口径见[实测页](docs/uc_results.md)。
 
-当前采用分范围的非商业测试许可；历史MIT及第三方声明分别保留，见LICENSE和LICENSE-SCOPE.json。
+## 许可与范围
 
-0.3.0历史安装基线：196项研发回归、74项独立非可编辑安装公开测试通过；安装后在源码目录外运行24h稀疏原生及4h密集原生示例均通过独立验收。当前逐路径范围和实测见[能力说明](docs/limitations.md)与新版本小结。
-
----
-
-## English
-
-Version 0.3.0 adds native controlled MPS import, a two-unit 24-hour UC model, independent physical checks, a native-only example and bilingual performance figures. All 196 development and 74 non-editably installed public tests pass. Installed 24-hour sparse-native and four-hour dense-native examples pass outside the source directory. See the linked UC results and capability notes for exact scope and actual statuses.
-
-ZYO is a locally runnable, editable, general-purpose **research development project** for linear and mixed-integer linear optimization. It includes a Python modeling API, independent algorithms, and single-node storage teaching applications. Downloads and discussion are welcome. The author describes the project as developed with ChatGPT 6, is also learning, and welcomes exchanges with fellow optimization enthusiasts.
-
-- `native`: ZYO's dense two-phase tableau simplex and basic branch-and-bound; requires NumPy and retains a dense-size guard.
-- `native_sparse`: ZYO's experimental sparse primal-dual finite-box method and branch-and-bound. Non-finite domains use recorded artificial-box trials with original-domain checks; an active artificial bound invalidates optimality. NumPy/SciPy/SuperLU provide basic numerical operations, not optimization engines.
-- `native_simplex`: ZYO's primal bounded-variable sparse revised simplex for LPs, with independent original-model KKT checks and complete executed-update accounting; see the dedicated guide.
-- Legacy HiGHS/Gurobi/COPT adapters are retained for explicitly selected, isolated comparisons only. External solutions, bases and cuts must not assist the native solver. No silent fallback is performed.
-
-Use the installation commands above with 64-bit Python 3.10+. On Linux/macOS replace `.venv\Scripts\python.exe` with `.venv/bin/python`; those platforms still require direct testing. The directly tested development platform is Windows/Python 3.10.19. Install `-e .` for NumPy-only dense mode, or `-e ".[native-sparse]"` for sparse mode. Initial dependency installation needs network access; subsequent solving can run offline. **This is a GitHub source release, not a PyPI release.**
-
-The example above minimizes `3*x+2*y` subject to `x+2*y>=4`, with bounded continuous `x` and binary `y`. Its hand-checked optimum is `x=2, y=1, objective=8`. Always inspect status, incumbent, bound, gap and original-model residuals: a feasible point or a time limit does not prove optimality.
-
-The public tests include independently specified core/storage examples and 60 frozen small integer development regressions. A synthetic 8760-hour cyclic storage MILP has native sparse execution evidence, with search closing at one root node; see the capability notes for its measured scope.
-
-2026-09-08 update: the native sparse kernel adds stabilized Newton factorization and original-equation iterative refinement. The independent 3×3 analytical fixture reaches objective 88. The 10×10 and 30×30 transportation LPs pass all three repeats at objectives 182 and 172. Across the 18 finite-optimum instances in the 20-instance development assessment, three-repeat successes increase from 13 to 15. Four regression tests accompany the fix; see the [changelog](CHANGELOG.md).
-
-Distributed under scoped noncommercial testing terms with inherited MIT and third-party notices retained; see LICENSE and LICENSE-SCOPE.json. English Python identifiers and Chinese maintenance comments support bilingual development.
+自 0.3.4 起，受限新增内容采用[ZYO 非商业测试许可 1.0.0](LICENSE)，按账号和用途申请，默认测试期 90 日。历史 MIT 代码和第三方材料保留各自权利，具体边界以[范围清单](LICENSE-SCOPE.json)、[历史 MIT 文本](LICENSES/MIT-legacy.txt)及[第三方声明](THIRD_PARTY.md)为准。申请只需概括用途，不索取实名、联系方式或单位；公开 Issue 会显示账号及提交内容，请勿写入隐私。[申请说明](docs/licensing-and-access.md) · [申请入口](https://github.com/Entropyneverfade/ZYO/issues/new?template=zyo-test.yml)。商用、生产、再分发和服务须另获许可；本地 `import zyo` 不需要远程 API 密钥。
