@@ -7,6 +7,17 @@ from .status import Status
 from .model import Model
 from .options import SolveOptions
 from .result import Result
+from .contract import (
+    ModelContract,
+    ResultContract,
+    engine_contract,
+    engine_support,
+    matrix_identity,
+    model_contract,
+    model_fingerprint,
+    representation_mapping,
+    result_contract,
+)
 from .vardict import VarDict
 from .validation import Residuals, evaluate_objective, validate_candidate
 from .solvers import BackendInfo, available_solvers, get_backend
@@ -34,10 +45,12 @@ __all__ = [
     "InvalidParameterError",
     "LinearExpression",
     "Model",
+    "ModelContract",
     "ModelingError",
     "NumericalError",
     "Options",
     "Result",
+    "ResultContract",
     "Residuals",
     "SolveOptions",
     "SolutionUnavailableError",
@@ -52,5 +65,12 @@ __all__ = [
     "evaluate_objective",
     "get_backend",
     "quicksum",
+    "engine_contract",
+    "engine_support",
+    "matrix_identity",
+    "model_contract",
+    "model_fingerprint",
+    "representation_mapping",
+    "result_contract",
     "validate_candidate",
 ]

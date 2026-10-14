@@ -6,7 +6,7 @@
   "distribution_expression": "LicenseRef-ZYO-Noncommercial-Testing-1.0.0 AND MIT",
   "adopted_on": "2026-09-08",
   "scope_updated_on": "2026-10-14",
-  "scope_update_basis": "Owner-authorized 0.3.7 synthetic-UC documentation, independently generated teaching inputs, and bounded native original-direction refinement plus tests, following the earlier original-LP release candidate. Only eligible new expression in listed paths relative to the unchanged public MIT baseline is registered. This engineering provenance inventory is not independent employment, similarity or legal clearance.",
+  "scope_update_basis": "Owner-authorized 0.3.7 synthetic-UC documentation, independently generated teaching inputs, bounded native original-direction refinement, and the GRIDMIND-facing model/result contract plus authored annual-path example and tests, following the earlier original-LP release candidate. Only eligible new expression in listed paths relative to the unchanged public MIT baseline is registered. This engineering provenance inventory is not independent employment, similarity or legal clearance.",
   "timezone": "Asia/Shanghai",
   "licensor": "Ziyuan Li",
   "authority_basis": "Owner-provided individual-development declaration and explicit instruction to replace default MIT licensing; no independent legal clearance claimed.",
@@ -120,7 +120,12 @@
     "tests/test_sparse_simplex_input_finite.py",
     "tests/test_sparse_simplex_small_direction_ratio.py",
     "tests/test_sparse_simplex_unpriced_gap.py",
-    "tests/test_public_sparse_ratio_degeneracy.py"
+    "tests/test_public_sparse_ratio_degeneracy.py",
+    "docs/solver_contract.md",
+    "examples/annual_state_path.py",
+    "tests/test_public_solver_contract.py",
+    "zyo/__init__.py",
+    "zyo/contract.py"
   ],
   "covered_local_additions": [
     "tools/export_public_release.py",

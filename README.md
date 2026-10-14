@@ -69,6 +69,7 @@ tolerance-based KKT audit; the current candidate's stricter replay is reported a
 - [原生 MPS 读取](docs/mps.md)：受控 free MPS 子集、自有解析器和严格格式检查。Native controlled free-MPS import and explicit format validation.
 - [机组组合教程](docs/unit_commitment.md)：24 小时、2 台机组、风光、爬坡、备用、最小开停机和独立物理检查。A 24-hour two-unit UC example with independent physical validation.
 - [固定种子合成机组组合算例](docs/synthetic_uc_examples.md)：公开公式生成、两种备用情景、真实原生状态与独立复核。Seeded synthetic UC cases with explicit formulas, two reserve scenarios, actual native statuses and independent audits.
+- [GRIDMIND 求解契约](docs/solver_contract.md)：版本化模型/结果指纹、引擎边界、年度状态路径最小例与失败状态语义。Versioned model/result fingerprints, engine boundaries, a minimal annual state-path example and failure-status semantics.
 - [实测与可视化](docs/uc_results.md)：ZYO 稀疏原生、密集原生与三种隔离比较引擎，全部尝试及真实状态。Measured dispatch and all five paths, retaining every status.
 - [实现语言策略](docs/implementation_languages.md)：稳定 Python API，按正确性、实测性能与维护成本选择实现语言。Stable Python API; outcome-driven implementation languages.
 

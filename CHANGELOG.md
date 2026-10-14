@@ -1,5 +1,12 @@
 # 版本记录 / Changelog
 
+## 0.3.7 GRIDMIND 求解契约增量 — 2026-10-14 / GRIDMIND solver-contract addendum
+
+- 新增版本化模型/结果契约、规范 JSON SHA-256 模型指纹、两个原生引擎的集成边界，以及原样携带 GRIDMIND_STATE_PATH_MILP_V1 的纯合成年度状态路径示例。独立枚举路径 (0,0,3) 与 ZYO 目标、全局界、Gap、one-hot 和单调约束一致；不可行与节点限额状态保持未证明，参数请求/实际应用/未映射分列。
+
+- Added versioned model/result contracts, canonical-JSON SHA-256 model fingerprints, explicit native-engine integration boundaries, and an authored annual state-path example carrying GRIDMIND_STATE_PATH_MILP_V1. Independent enumeration matches the native objective, global bound, gap, one-hot and monotonicity audits; infeasible and node-limit stops remain unproved, and requested/applied/unmapped parameters are separate.
+
+
 ## 0.3.7 原生稀疏原式方向校正增量 — 2026-10-14 / Native original-direction refinement addendum
 
 - 默认稀疏法方程回退增加最多三次原牛顿方向残差校正，保留原始方向验收门、时间预算和实际引擎记录；解析 2×3、零修正/拒绝控制及完整 UC 测试随源码更新。
