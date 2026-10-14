@@ -5,13 +5,13 @@
 `native_simplex`是ZYO自研有界变量原始稀疏修正单纯形LP路径。输入为线性目标、
 等式/不等式和变量界；自由变量通过精确拆分映射。行活动变量将标准化模型写为
 
-\[
+```math
 \min c^Tx+c_0,\quad Ax=0,\quad l\le x\le u.
-\]
+```
 
 最小化/最大化和目标常数回映射到用户原模型。逻辑起点不可行时执行人工变量Phase-I；
-基变量满足 $Bx_B=-Nx_N$，入列方向 $d=B^{-1}a_q$，移动后
-$x_B\leftarrow x_B-\alpha\,s_qd$。有界变量可翻界而不换基。
+基变量满足 $`Bx_B=-Nx_N`$，入列方向 $`d=B^{-1}a_q`$，移动后
+$`x_B\leftarrow x_B-\alpha\,s_qd`$。有界变量可翻界而不换基。
 NumPy数组、SciPy稀疏矩阵/SuperLU是基础数值组件；ZYO维护eta更新、定价、比例检验与状态。
 
 `native_simplex` implements ZYO's primal bounded-variable sparse revised simplex for LPs.
@@ -21,7 +21,7 @@ The original objective direction, constant and variable mapping are restored in 
 
 ### 0.3.7 原模型证书与后验小基 / Original-model certificate and posthoc small basis
 
-定价阈值只控制入基选择；底层发现严格但低于该门的改善成本时保留 `NUMERICAL_ERROR` 与 `unpriced_optimality` 标记。若当前完整基不超过8行、64列，ZYO 自身可从已存储的 binary64 $B,c_B$ 用有理数求候选 $B^Ty=c_B$。**它只是行乘子建议**：原模型证书仍逐项复核行活动、界、对偶符号、所有简约成本、互补及目标差。通过后公共 `OPTIMAL` 表示在既定容差内完成证书认证，`metadata.raw_status` 继续记录底层数值停止；限额、Phase-I 与其他数值错误不适用此恢复。
+定价阈值只控制入基选择；底层发现严格但低于该门的改善成本时保留 `NUMERICAL_ERROR` 与 `unpriced_optimality` 标记。若当前完整基不超过8行、64列，ZYO 自身可从已存储的 binary64 $`B,c_B`$ 用有理数求候选 $`B^Ty=c_B`$。**它只是行乘子建议**：原模型证书仍逐项复核行活动、界、对偶符号、所有简约成本、互补及目标差。通过后公共 `OPTIMAL` 表示在既定容差内完成证书认证，`metadata.raw_status` 继续记录底层数值停止；限额、Phase-I 与其他数值错误不适用此恢复。
 
 The pricing threshold selects an entering column, not a proof of optimality. A strictly improving but unpriced column retains a native numerical stop. An exact-rational small-basis equation proposes multipliers only; full original-model certification is the acceptance gate. The public certified status and raw native stop are separate fields, and the helper is capped at eight rows and 64 columns.
 
@@ -44,9 +44,9 @@ print(r.status, r.objective, r.metadata['raw_status'])
 print(r.metadata['certificate']['verified'], r.metadata['fallback_used'])
 ```
 
-$(p,q,v)=(1/2,1/2,1/2)$ 可行，行权重 $(1/2,0,1/6,1/3)$ 消去自由变量得 $v\le1/2$，所以目标 $0.5$ 可独立核对。另在非规范 CSC/CSR 输入中，相同 `(row,column)` 的有限值按 binary64 汇总一次，然后齐次求解模型与原模型证书使用同一矩阵；调用方原始稀疏数组保持不变。重复值求和溢出则明确报输入错误。
+$`(p,q,v)=(1/2,1/2,1/2)`$ 可行，行权重 $`(1/2,0,1/6,1/3)`$ 消去自由变量得 $`v\le1/2`$，所以目标 $`0.5`$ 可独立核对。另在非规范 CSC/CSR 输入中，相同 `(row,column)` 的有限值按 binary64 汇总一次，然后齐次求解模型与原模型证书使用同一矩阵；调用方原始稀疏数组保持不变。重复值求和溢出则明确报输入错误。
 
-The weighted-row inequality independently proves the $0.5$ optimum. Duplicate sparse coordinates are normalized consistently across solving and certification without changing the caller's arrays; a nonfinite sum raises an input error.
+The weighted-row inequality independently proves the $`0.5`$ optimum. Duplicate sparse coordinates are normalized consistently across solving and certification without changing the caller's arrays; a nonfinite sum raises an input error.
 
 ## 安装后手算复现 / Installed hand-checkable example
 
@@ -69,10 +69,10 @@ assert not r.metadata['fallback_used']
 print(r.values, r.primal_residual, r.metadata['iteration_budget'])
 ```
 
-手算交点 $(x,y)=(3,1)$、目标 $-5$。独立检查原约束、变量界、对偶符号、简约成本、
+手算交点 $`(x,y)=(3,1)`$、目标 $`-5`$。独立检查原约束、变量界、对偶符号、简约成本、
 互补与强对偶；仅证书通过才从后端报告OPTIMAL。证书失败保留原状态并返回数值错误。
 Feasibility alone is not optimality: the adapter verifies six independent KKT conditions before
-reporting OPTIMAL. The analytical optimum is $(3,1)$ with objective $-5$.
+reporting OPTIMAL. The analytical optimum is $`(3,1)`$ with objective $`-5`$.
 
 ## 预算、输出和范围 / Budget, output and scope
 

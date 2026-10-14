@@ -10,7 +10,7 @@
 ## 0.3.7 原生稀疏原式方向校正增量 — 2026-10-14 / Native original-direction refinement addendum
 
 - 默认稀疏法方程回退增加最多三次原牛顿方向残差校正，保留原始方向验收门、时间预算和实际引擎记录；解析 2×3、零修正/拒绝控制及完整 UC 测试随源码更新。
-- 自写紧备用 24h UC 的原生稀疏路径得到 `OPTIMAL` 39856.801000227846、ENS0、27节点、原行残差$6.83\times10^{-10}$；三轮逐小时前缀各23/24最优，2h仍以真实数值状态返回。
+- 自写紧备用 24h UC 的原生稀疏路径得到 `OPTIMAL` 39856.801000227846、ENS0、27节点、原行残差$`6.83\times10^{-10}`$；三轮逐小时前缀各23/24最优，2h仍以真实数值状态返回。
 
 English: added up to three original-equation residual corrections to the native sparse fallback, preserving strict direction checks. The authored full-day tight-reserve UC now reaches an independently audited native optimum; three repeated scans each accept 23/24 prefixes, with a two-hour numerical boundary recorded.
 
