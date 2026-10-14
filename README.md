@@ -4,6 +4,10 @@ ZYO 是可本地运行、可修改算法的通用优化研究项目，提供 Pyt
 
 [中英安装与使用 / Bilingual quickstart](docs/quickstart_zh.md) · [能力与限制 / Limitations](docs/limitations.md) · [参与开发 / Contributing](CONTRIBUTING.md) · [版本记录 / Changelog](CHANGELOG.md) · [依赖 / Dependencies](THIRD_PARTY.md)
 
+0.3.7 最新研发增量：原生稀疏法方程回退新增有界原牛顿方向校正。自写 24h `tight_reserve` 机组组合由 ZYO `native_sparse` 独立求得目标 39856.801000227846、ENS0，原模型和物理检查通过；三轮逐小时前缀各23/24最优，保留 2h 数值反例。[公式、输入和中英使用说明](docs/synthetic_uc_examples.md)。
+
+Latest 0.3.7 research addendum: bounded original-direction correction in the native sparse fallback yields an independently audited optimum on the authored 24-hour tight-reserve UC case. Three repeated prefix scans each accept 23/24; the two-hour numerical boundary is preserved. [Bilingual formulae, input and usage](docs/synthetic_uc_examples.md).
+
 ## 授权与用途申请 / Licensing and purpose-only requests
 
 自0.3.4（2026-09-08）起正式采用[ZYO非商业测试许可1.0.0](LICENSE)，[范围清单](LICENSE-SCOPE.json)区分受限新增与历史MIT/第三方部分。许可人 **Ziyuan Li** 保留自有或有权授权内容的商业化，包括收费软件、商业许可和API/SaaS。[本版小结](docs/releases/0.3.7.md)。

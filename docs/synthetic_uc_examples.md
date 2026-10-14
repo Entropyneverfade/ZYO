@@ -47,6 +47,7 @@ The objective combines thermal energy, online-hour and start/stop costs. Balance
 python -B examples/generate_synthetic_uc.py --seed 20261014 --profile balanced --output examples/my_synthetic_uc.json
 python -B -m unittest tests.test_public_synthetic_uc -v
 python -I examples/run_uc.py --input examples/synthetic_uc_balanced_20261014.json --output results-balanced --engine native_sparse
+python -I examples/run_uc.py --input examples/synthetic_uc_tight_reserve_20261014.json --output results-tight-sparse --engine native_sparse
 python -I examples/run_uc.py --input examples/synthetic_uc_tight_reserve_20261014.json --output results-tight-dense --engine native
 ```
 
@@ -59,10 +60,10 @@ The native runner blocks external optimizer imports and fallback. Its archived r
 | 场景 / Case | 引擎 / Engine | 真实状态 / Status | 目标 / Cost | 独立物理检查 / Physical check |
 | --- | --- | --- | ---: | --- |
 | `balanced` | ZYO `native_sparse` | `OPTIMAL` | 33254.471000569254 | 通过，ENS=0 / Pass |
-| `tight_reserve` | ZYO `native_sparse` | `NUMERICAL_ERROR`，根节点牛顿方向原式残差检查失败 | 无可行候选 / None | 无可检查轨迹 / No trace |
+| `tight_reserve` | ZYO `native_sparse`（原式校正增量） | `OPTIMAL` | 39856.801000227846 | 通过，ENS=0 / Pass |
 | `tight_reserve` | ZYO `native` | `OPTIMAL` | 39856.80100000001 | 通过，ENS=0 / Pass |
 | `tight_reserve` | 隔离 HiGHS 1.8.0 / isolated comparison | `OPTIMAL` | 39856.801 | 通过，ENS=0 / Pass |
 
-这些是功能与失败机制的单次回执，不是多次随机种子性能基准。紧备用模型在原生稀疏根节点的失败可用于下一轮失败优先、文献驱动的 KKT/线性代数诊断；密集路径和隔离对照只说明同一数学模型存在可验收解。更换种子或参数后，须重新运行独立物理与原模型检查，不能沿用本表结果。
+原生稀疏法方程回退现在最多进行三次基于**原牛顿方向**残差的有界校正。若 $D=\operatorname{diag}(x/s)$、$N=ADA^\top$，每次解 $N\delta y=r_p-A\Delta x$，恢复 $\Delta x,\Delta s$ 后仍按原式验收；不会调宽可行性/互补方向门。上述紧备用模型经27个搜索节点、288次累计 LP 迭代得到原生整数解；独立原行残差 $6.83\times10^{-10}$、物理残差最大 $6.61\times10^{-10}$、归一化 Gap $7.98\times10^{-12}$。三轮固定种子逐小时前缀复核均为23/24最优，2h前缀仍返回 `NUMERICAL_ERROR`。这些是自写教学输入的局部实测；更换种子或参数后须重新运行独立物理与原模型检查。
 
-These are single-run functional receipts, not a performance ranking. The tight-reserve case is a reproducible sparse-root numerical boundary for future KKT/linear-algebra diagnosis. The dense-native and isolated comparison outcomes demonstrate an accepted solution to the same mathematical model; any new seed needs fresh independent audits.
+The native fallback now applies at most three bounded corrections against the **reconstructed original Newton equations**, retaining their original acceptance gates. The authored full-day sparse MILP closes 27 nodes and passes independent row, physical and cost checks. Three repeated prefix scans each accept 23 of 24 prefixes; the two-hour prefix retains its numerical stop. These local teaching-case receipts are not a general solver ranking; new data require fresh model and physical audits.

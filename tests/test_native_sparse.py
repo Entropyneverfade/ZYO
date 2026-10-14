@@ -1,5 +1,6 @@
 # 回归测试：用解析模型与导入封锁验证自主稀疏路径及其有限盒限制。
 import importlib.util
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +13,42 @@ import zyo
 
 @unittest.skipUnless(importlib.util.find_spec('scipy'), 'SciPy sparse linear algebra required')
 class NativeSparseTests(unittest.TestCase):
+    def test_public_analytic_original_direction_refinement(self):
+        # 独立小矩阵给出精确方向；内部法方程残差不能替代原式方向门。
+        from scipy.sparse import csc_matrix
+        from zyo.sparse_lp import _normal_solver, _refine_original_newton_direction
+        A=csc_matrix([[1.,0.,1.],[0.,1.,1.]])
+        x=np.array([1e-10,1e-10,1.]); s=np.ones(3)
+        rp=np.array([1.,-1.]); zeros=np.zeros(3)
+        normal,_=_normal_solver(A,x/s)
+        initial=normal(rp)
+        dx,dy,ds,corrections=_refine_original_newton_direction(
+            A,x,s,rp,zeros,zeros,initial,normal,max_corrections=3)
+        self.assertGreaterEqual(corrections,1)
+        self.assertLessEqual(float(np.max(np.abs(A@dx-rp))),2e-9)
+        self.assertLessEqual(float(np.max(np.abs(s*dx+x*ds))),1e-9)
+
+    def test_public_synthetic_full_day_sparse_uc(self):
+        # 固定种子教学例：验收原生全周期整数调度及独立物理/成本重算。
+        from zyo.validation import evaluate_objective, validate_candidate
+        from zyo_power.unit_commitment import build_uc_model, extract_uc_trace, validate_uc
+        source=Path(__file__).resolve().parents[1]/'examples'/'synthetic_uc_tight_reserve_20261014.json'
+        case=json.loads(source.read_text(encoding='utf-8'))
+        model,mapping=build_uc_model(case)
+        self.assertEqual((len(model.variables),len(model.constraints)),(264,480))
+        result=model.solve('native_sparse',options=zyo.SolveOptions(
+            time_limit=10,threads=1,seed=20260908,mip_gap=0,
+            feasibility_tol=1e-7,integrality_tol=1e-7))
+        self.assertEqual(result.status,zyo.Status.OPTIMAL,result.termination_reason)
+        self.assertFalse(result.metadata['fallback_used'])
+        self.assertTrue(validate_candidate(model,result.values,1e-7,1e-7).is_feasible)
+        physical=validate_uc(case,extract_uc_trace(mapping,result.values))
+        self.assertTrue(physical['physical_pass'])
+        self.assertEqual(physical['ens_mwh'],0.)
+        self.assertAlmostEqual(evaluate_objective(model,result.values),39856.801,delta=1e-4)
+        self.assertAlmostEqual(physical['cost'],result.objective,delta=1e-4)
+        self.assertLessEqual(result.objective-result.best_bound,1e-4)
+
     def test_336_hour_sparse_newton_stability_regression(self):
         from zyo_power.examples import synthetic_case
         from zyo_power.optimization import optimize_dispatch

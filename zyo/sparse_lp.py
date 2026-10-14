@@ -216,6 +216,30 @@ def _normal_solver(A,ratio,deadline=None,*,residual_target=None,max_refinements=
     return solve,statistics
 
 
+def _refine_original_newton_direction(A,x,s,rp,rd,rc,dy,normal_solve,*,
+                                      max_corrections=3,deadline=None):
+    # 法方程残差可因浮点回代抵消而低估原式误差；每次只按原牛顿方程重算方向。
+    # 对给定 dy，原始可行残差 r_p-A dx 恰是下一次法方程的修正右端；这是
+    # Carson–Higham 残差改进原则在当前消元式上的直接代数推导，不改目标/约束。
+    if isinstance(max_corrections,bool) or not isinstance(max_corrections,int) or max_corrections<0:
+        raise ValueError('Original-direction correction count must be nonnegative')
+    primal_target=1e-9*(1+float(np.max(np.abs(rp),initial=0)))
+    complement_target=1e-9*(1+float(np.max(np.abs(rc),initial=0)))
+    for correction in range(max_corrections+1):
+        ds=rd-A.T@dy
+        dx=(rc-x*ds)/s
+        residual=rp-A@dx
+        primal=float(np.max(np.abs(residual),initial=0))
+        complement=float(np.max(np.abs(s*dx+x*ds-rc),initial=0))
+        if (all(np.all(np.isfinite(v)) for v in (dx,dy,ds))
+                and primal<=primal_target and complement<=complement_target):
+            return dx,dy,ds,correction
+        if correction<max_corrections:
+            _check_deadline(deadline)
+            dy=dy+normal_solve(residual)
+    raise ArithmeticError('Refined Newton direction failed original residual check')
+
+
 def _augmented_matrix(C):
     # 直接按 CSC 列指针组装 [-I C'; C 0]，复用稀疏结构避免通用块装配的多次格式转换。
     # 只改变存储构造；符号、数值、列排序与原块矩阵一致，不改变牛顿方程。
@@ -629,6 +653,15 @@ def _solve_relaxation(model,lower,upper,options,deadline,*,_experimental_normal_
                         if _experimental_strict_normal_residual:
                             history[-1]['failed_normal_linear_solve']=dict(statistics)
                         raise
+                    if not _experimental_normal_equations:
+                        # 默认回退仅追加有界原式校正；已有合格方向零次修正即原样返回。
+                        dx,dy,ds,corrections=_refine_original_newton_direction(
+                            A,x,s,rp,rd,rc,dy,normal_solve,deadline=deadline)
+                        history[-1]['normal_original_refinement_steps']=corrections
+                        linear_methods.append('normal_equations_original_refinement'
+                                              if corrections else 'normal_equations_refinement')
+                        linear_ridge=max(linear_ridge,statistics['regularization'])
+                        return dx,dy,ds
                     ds=rd-A.T@dy
                     dx=(rc-x*ds)/s
                     primal_newton_residual=float(np.max(np.abs(A@dx-rp),initial=0.))
