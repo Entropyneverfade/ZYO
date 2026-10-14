@@ -1,5 +1,14 @@
 # 版本记录 / Changelog
 
+## 0.3.7 合成机组组合算例增补 — 2026-10-14 / Synthetic UC case addendum
+
+- 新增固定种子、公开公式生成的两份 24 小时单节点机组组合 JSON、生成器、逐字段复现测试和中英文模型说明。
+- 同一 264 变量、48 二元变量、480 约束、1472 非零元模型完成原生稀疏、原生密集及隔离 HiGHS 的状态与物理复核；紧备用场景的稀疏根节点数值失败作为可复现边界案例留存。
+
+English: added two seeded, formula-generated 24-hour UC inputs, their generator, exact-reproduction test and bilingual model note. Independently audited native and isolated comparison runs on the 264-variable models; the tight-reserve sparse-root numerical stop is retained as a reproducible boundary case.
+
+[公式、输入来源、真实状态与复现 / Formulae, provenance, actual statuses and reproduction](docs/synthetic_uc_examples.md).
+
 ## 0.3.7 本地发布候选 — 2026-10-05 / Local release candidate
 
 - 原始模型证书按存储 binary64 数重新核查行活动、目标、简约成本与对偶差；补充乘积抵消、非有限中间量及无界改善方向手算反例。

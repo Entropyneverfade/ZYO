@@ -26,3 +26,6 @@ docs/research/figures/phase_two_integer_snap_20261005/Fig01_StepAndWall/** -text
 # 第二边界题图源与双语报告按原始字节记录哈希，跨平台检出保持不变。
 docs/research/figures/phase_two_air03_control_20261005/Fig01_DualStart/** -text
 docs/research/phase_two_integer_snap_air03_20261005.md -text
+# 公开固定种子 JSON 保存原始字节，跨平台检出可核对输入 SHA-256。
+examples/synthetic_uc_balanced_20261014.json -text whitespace=cr-at-eol
+examples/synthetic_uc_tight_reserve_20261014.json -text whitespace=cr-at-eol
