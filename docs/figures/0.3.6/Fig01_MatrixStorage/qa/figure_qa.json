@@ -3,7 +3,7 @@
   "fallback_reason": "The attempted Origin export had a demo watermark; the published renderer is Python/matplotlib.",
   "data_check": "PASS",
   "export_check": "PASS",
-  "visual_review": "PASS: 600 dpi PNG visually inspected; labels, four points and 0-800 ratio scale are legible; no watermark or clipping.",
+  "visual_review": "PASS: 600 dpi PNG checked at full size; all four measured points intact, both display endpoints on each axis have visible inward ticks, labels and legend legible.",
   "source_sha256": "ca965cdfc43d35973b07a1d1cc3ef2190e2b389bf4a92f6c3199d504355be8d2",
   "sizes": [
     200,
@@ -17,5 +17,38 @@
     499.87503124218944,
     709.8750220031685
   ],
-  "claim": "Matrix buffer bytes only: NumPy dense nbytes divided by CSC data+indices+indptr bytes. Not solver time or process RSS."
+  "claim": "Matrix buffer bytes only: NumPy dense nbytes divided by CSC data+indices+indptr bytes. Not solver time or process RSS.",
+  "revision_date": "2026-10-15",
+  "script_sha256": "30cd96d2e369a3136a1e6d8f8072a0f6759beb36883bf91f9ec5bbb0080095f3",
+  "figure_sha256": {
+    "svg": "bbae3451a9921da4aae1c71545083a097552bdad84957cbccd79eb9f02b71de5",
+    "pdf": "a23b20f28819ca6d9b8f03fcedab2d316fca8f3b924ff1bbc41b6fc42b32bbdd",
+    "png": "b2f8dceda2e9b7e114d893cbc9187f731119ba0a3e41c5df549d2b7e413e2466"
+  },
+  "declared_axes": {
+    "x_display": [
+      150,
+      1470
+    ],
+    "x_endpoint_ticks": [
+      150,
+      1470
+    ],
+    "y_display": [
+      0,
+      800
+    ],
+    "y_endpoint_ticks": [
+      0,
+      800
+    ],
+    "tick_direction": "in"
+  },
+  "pdf_page_count": 1,
+  "pdf_page_size_mm": [
+    168,
+    95
+  ],
+  "pdf_fonts": "Embedded Times New Roman subset",
+  "png_resolution_dpi": 600
 }

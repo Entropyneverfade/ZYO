@@ -40,9 +40,16 @@ def main(argv=None):
               linewidth=1.6, label='Dense / CSC')
     axis.set(xlim=(150, 1470), ylim=(0, 800), xlabel='LP dimension (rows = columns)',
              ylabel='Dense / CSC matrix bytes')
-    axis.set_xticks(sizes)
+    # 显示边界 150/1470 也保留真实朝内刻度，标签只标四个测量尺寸。
+    axis.set_xticks([150, *sizes, 1470])
+    axis.set_xticklabels(['', *(str(size) for size in sizes), ''])
     axis.set_yticks([0, 200, 400, 600, 800])
     axis.tick_params(direction='in', width=0.7, length=4, labelsize=8)
+    # 边界刻度与轴框重合，单独加粗短线以免只见轴框角点。
+    for end_tick in (axis.xaxis.get_major_ticks()[0], axis.xaxis.get_major_ticks()[-1],
+                     axis.yaxis.get_major_ticks()[0], axis.yaxis.get_major_ticks()[-1]):
+        end_tick.tick1line.set_markersize(6)
+        end_tick.tick1line.set_markeredgewidth(1.8)
     for spine in axis.spines.values():
         spine.set_linewidth(0.7)
     axis.legend(loc='upper left', frameon=False, fontsize=8)

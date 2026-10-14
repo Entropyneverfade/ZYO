@@ -114,18 +114,18 @@
     },
     {
       "path": "docs/figures/0.3.6/Fig01_MatrixStorage/images/Fig01_MatrixStorage.svg",
-      "bytes": 8126,
-      "sha256": "f0a6224fd7a13202179db01ee4a62febd8ea248c14203cbe93e30a0be74353f4"
+      "bytes": 8756,
+      "sha256": "bbae3451a9921da4aae1c71545083a097552bdad84957cbccd79eb9f02b71de5"
     },
     {
       "path": "docs/figures/0.3.6/Fig01_MatrixStorage/qa/figure_qa.json",
-      "bytes": 748,
-      "sha256": "ea355584ad0a1302ce89171dae928ab3effcbaed2999d36ee9bd13d59e1262d0"
+      "bytes": 1574,
+      "sha256": "eb421f6963f39692e307507c9c67151c0f14e3b3f751855c9bd25a531e373de3"
     },
     {
       "path": "docs/figures/0.3.6/Fig01_MatrixStorage/scripts/plot_python.py",
-      "bytes": 4050,
-      "sha256": "012810b93424291acfff2d3d4a3c9508209f718a1375830d2856f661624cb2c8"
+      "bytes": 4579,
+      "sha256": "30cd96d2e369a3136a1e6d8f8072a0f6759beb36883bf91f9ec5bbb0080095f3"
     },
     {
       "path": "docs/figures/0.3.6/Fig01_MatrixStorage/source_data/matrix_storage.csv",
@@ -239,8 +239,8 @@
     },
     {
       "path": "docs/releases/0.3.6.md",
-      "bytes": 4477,
-      "sha256": "e1b015e0441d5592c4199b9ae149b545696d83d7f7e6d868c40f2c9f124047e5"
+      "bytes": 4801,
+      "sha256": "c1c4b2c5762f0424efca63f3f4013519e3b80139fc8522e96bd8855df7456618"
     },
     {
       "path": "docs/releases/0.3.7.md",
