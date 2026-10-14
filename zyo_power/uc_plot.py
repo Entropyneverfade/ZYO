@@ -9,14 +9,14 @@ import statistics
 
 
 def stack_style(resources):
-    # 依用户要求参照HUST_GTDS 2023说明书第73/92页：火红、风绿、光黄、水青、储蓝。
+    # 算例展示采用统一技术配色：火红、风绿、光黄、水青、储蓝。
     # 这是语义近似配色而非软件默认RGB复刻；ENS用独立灰色交叉纹理，不与火电红色混淆。
     styles={'thermal':('#ff0000',''),'wind':('#00cc00','|||'),'solar':('#ffff00','///'),
             'hydro':('#00cccc','\\\\'),'storage':('#0000ff','..'),'ens':('#dddddd','xx')}
     if any(name not in styles for name in resources):
         raise ValueError('Unknown resource in the power color contract')
     return dict(colors=[styles[name][0] for name in resources],hatches=[styles[name][1] for name in resources],
-                reference='HUST_GTDS 2023 manual, printed pages 73 and 92; approximate semantic colors')
+                reference='算例技术配色约定；颜色仅表示技术类别')
 
 
 def save_json(path, data):

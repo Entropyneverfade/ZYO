@@ -64,6 +64,6 @@ The native runner blocks external optimizer imports and fallback. Its archived r
 | `tight_reserve` | ZYO `native` | `OPTIMAL` | 39856.80100000001 | 通过，ENS=0 / Pass |
 | `tight_reserve` | 隔离 HiGHS 1.8.0 / isolated comparison | `OPTIMAL` | 39856.801 | 通过，ENS=0 / Pass |
 
-原生稀疏法方程回退现在最多进行三次基于**原牛顿方向**残差的有界校正。若 $`D=\operatorname{diag}(x/s)`$、$`N=ADA^\top`$，每次解 $`N\delta y=r_p-A\Delta x`$，恢复 $`\Delta x,\Delta s`$ 后仍按原式验收；不会调宽可行性/互补方向门。上述紧备用模型经27个搜索节点、288次累计 LP 迭代得到原生整数解；独立原行残差 $`6.83\times10^{-10}`$、物理残差最大 $`6.61\times10^{-10}`$、归一化 Gap $`7.98\times10^{-12}`$。三轮固定种子逐小时前缀复核均为23/24最优，2h前缀仍返回 `NUMERICAL_ERROR`。这些是自写教学输入的局部实测；更换种子或参数后须重新运行独立物理与原模型检查。
+原生稀疏法方程回退现在最多进行三次基于**原牛顿方向**残差的有界校正。若 $`D=\mathrm{diag}(x/s)`$、$`N=ADA^\top`$，每次解 $`N\delta y=r_p-A\Delta x`$，恢复 $`\Delta x,\Delta s`$ 后仍按原式验收；不会调宽可行性/互补方向门。上述紧备用模型经27个搜索节点、288次累计 LP 迭代得到原生整数解；独立原行残差 $`6.83\times10^{-10}`$、物理残差最大 $`6.61\times10^{-10}`$、归一化 Gap $`7.98\times10^{-12}`$。三轮固定种子逐小时前缀复核均为23/24最优，2h前缀仍返回 `NUMERICAL_ERROR`。这些是自写教学输入的局部实测；更换种子或参数后须重新运行独立物理与原模型检查。
 
 The native fallback now applies at most three bounded corrections against the **reconstructed original Newton equations**, retaining their original acceptance gates. The authored full-day sparse MILP closes 27 nodes and passes independent row, physical and cost checks. Three repeated prefix scans each accept 23 of 24 prefixes; the two-hour prefix retains its numerical stop. These local teaching-case receipts are not a general solver ranking; new data require fresh model and physical audits.
